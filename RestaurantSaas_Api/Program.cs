@@ -1,16 +1,19 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.InterfacesService;
 using RestaurantSaaS.Application.Services;
 using RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Auth.RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Data;
+using RestaurantSaaS.Infrastructure.PasswordHash;
 using System.Text;
-
+using RestaurantSaaS.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,9 +62,24 @@ builder.Services
         };
     });*/
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
 
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+//builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+//builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+builder.Services.AddAuthorization(options =>
+{
+    // للـ endpoints التي يجب أن تقبل Pre-Auth Token أيضًا (اختيار/عرض المؤسسات)
+    options.AddPolicy("AuthenticatedAny", p => p.RequireAuthenticatedUser());
+
+    // الافتراضي لكل [Authorize] بلا Policy محدد: يشترط Access Token فعليًا
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireClaim(AppClaimTypes.TokenType, TokenTypes.Access)
+        .Build();
+});
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -75,6 +93,7 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
 builder.Services.AddScoped<IAppDbContext>(sp =>sp.GetRequiredService<AppDbContext>());
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
