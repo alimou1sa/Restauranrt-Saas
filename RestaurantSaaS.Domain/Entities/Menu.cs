@@ -1,10 +1,10 @@
-﻿using RestaurantSaaS.Domain.Common;
+﻿
 using System;
 using System.Collections.Generic;
 
 namespace RestaurantSaaS.Infrastructure;
 
-public partial class Menu: IBranchOwnedEntity
+public partial class Menu
 {
     public int MenuId { get; set; }
 

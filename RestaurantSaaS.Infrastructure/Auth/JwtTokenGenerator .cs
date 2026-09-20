@@ -25,7 +25,7 @@ namespace RestaurantSaaS.Infrastructure.Auth
                 _settings = options.Value;
             }
 
-            public string GenerateToken(IEnumerable<Claim> claims, TimeSpan? expiration = null)
+            public string GenerateToken(List<Claim> claims, TimeSpan? expiration = null)
             {
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
                 var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

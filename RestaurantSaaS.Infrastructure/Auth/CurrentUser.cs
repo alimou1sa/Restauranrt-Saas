@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-   using Microsoft.AspNetCore.Http;
-    using RestaurantSaaS.Application.Common;
-    using RestaurantSaaS.Application.InterfacesService;
+    using global::RestaurantSaaS.Application.Common;
+    using global::RestaurantSaaS.Application.InterfacesService;
+    using Microsoft.AspNetCore.Http;
+
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
-namespace RestaurantSaaS.Application.Services
+namespace RestaurantSaaS.Infrastructure.Auth
 {
- 
+    
         public class CurrentUser : ICurrentUser
         {
             private readonly ClaimsPrincipal? _user;

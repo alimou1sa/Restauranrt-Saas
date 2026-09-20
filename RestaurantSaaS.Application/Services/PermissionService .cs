@@ -1,25 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Permissions.PermissionRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.Permissions.PermissionRequest;
     using global::RestaurantSaaS.Application.DTOs.Permissions.PermissionResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
 
     public class PermissionService : IPermissionService
     {
-        private readonly IAppDbContext _context;
 
-        public PermissionService(IAppDbContext context)
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
+        private const string CacheKeyPrefix = "perms:";
+
+        private readonly IAppDbContext _context;
+        private readonly IMemoryCache _cache;
+
+        public PermissionService(IAppDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
+
+        public async Task<HashSet<string>> GetPermissionsAsync(int organizationUserId)
+        {
+            var cacheKey = CacheKeyPrefix + organizationUserId;
+
+            if (_cache.TryGetValue(cacheKey, out HashSet<string>? cached) && cached is not null)
+                return cached;
+
+            var permissions = await LoadPermissionsAsync(organizationUserId);
+
+            _cache.Set(cacheKey, permissions, CacheTtl);
+            return permissions;
+        }
+
+        public void InvalidateCache(int organizationUserId)
+        {
+            _cache.Remove(CacheKeyPrefix + organizationUserId);
+        }
+
+        private async Task<HashSet<string>> LoadPermissionsAsync(int organizationUserId)
+        {
+
+            var membershipActive = await _context.OrganizationUsers
+                .AsNoTracking()
+                .AnyAsync(ou => ou.OrganizationUserId == organizationUserId &&
+                    ou.IsActive &&ou.RemovedAtUtc == null);
+
+            if (!membershipActive)
+                return new HashSet<string>();
+
+            var codes = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.OrganizationUserId == organizationUserId && ur.Role.IsActive)
+                .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Code))
+                .Distinct().ToListAsync();
+
+            return codes.ToHashSet();
+        }
+    
+
+
 
         public async Task<PermissionResponse> CreateAsync(CreatePermissionRequest request)
         {

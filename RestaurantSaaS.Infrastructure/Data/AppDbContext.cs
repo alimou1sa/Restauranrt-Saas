@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.InterfacesService;
-using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
 using RestaurantSaaS.Infrastructure;
 using System;

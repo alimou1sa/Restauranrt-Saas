@@ -11,7 +11,7 @@ namespace RestaurantSaaS.Application.InterfacesService
 
         public interface IJwtTokenGenerator
         {
-            string GenerateToken(IEnumerable<Claim> claims, TimeSpan? expiration = null);
+            string GenerateToken(List<Claim> claims, TimeSpan? expiration = null);
         }
     
 }

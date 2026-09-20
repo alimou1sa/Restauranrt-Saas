@@ -22,5 +22,10 @@ namespace RestaurantSaaS.Application.InterfacesService
         Task<PermissionResponse?> UpdateAsync(int permissionId, UpdatePermissionRequest request);
 
         Task<bool> DeleteAsync(int permissionId);
+
+        Task<HashSet<string>> GetPermissionsAsync(int organizationUserId);
+
+        void InvalidateCache(int organizationUserId);
+
     }
 }
