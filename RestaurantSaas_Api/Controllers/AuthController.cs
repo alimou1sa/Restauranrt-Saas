@@ -24,6 +24,8 @@ namespace RestaurantSaas_Api.Controllers
             _authService = authService;
         }
 
+
+
         [HttpPost("login", Name = "Login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
@@ -39,21 +41,21 @@ namespace RestaurantSaas_Api.Controllers
         }
 
 
-        [Authorize]
-        [HttpGet("organizations", Name = "GetMyOrganizations")]
+        [Authorize(Policy = "AuthenticatedAny")]
+        [HttpGet( Name = "GetMyOrganizations")]
         public async Task<ActionResult<List<OrganizationOptionResponse>>> GetMyOrganizations()
         {
-            var result = await _authService.GetMyOrganizationsAsync(GetUserId());
+            var result = await _authService.GetMyOrganizationsAsync();
             return Ok(result);
         }
 
-        [Authorize]
+        [Authorize(Policy = "AuthenticatedAny")]
         [HttpPost("select-organization", Name = "SelectOrganization")]
         public async Task<ActionResult<AuthTokenResponse>> SelectOrganization([FromBody] SelectOrganizationRequest request)
         {
             try
             {
-                var result = await _authService.SelectOrganizationAsync(GetUserId(), request);
+                var result = await _authService.SelectOrganizationAsync(request);
                 return Ok(result);
             }
             catch (UnauthorizedAccessException ex)
@@ -62,13 +64,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-        private int GetUserId()
-        {
-            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (sub is null || !int.TryParse(sub, out var userId))
-                throw new UnauthorizedAccessException("Invalid token.");
-            return userId;
-        }
+
     }
 }
 

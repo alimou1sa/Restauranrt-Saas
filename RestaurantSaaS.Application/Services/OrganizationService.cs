@@ -1,12 +1,13 @@
-﻿using RestaurantSaaS.Application.DTOs.Organizations.OrganizationsRequest;
+﻿using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Application.DTOs.Organizations.OrganizationsRequest;
 using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Domain.Common;
+using RestaurantSaaS.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RestaurantSaaS.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 
 namespace RestaurantSaaS.Application.Services
@@ -16,10 +17,11 @@ namespace RestaurantSaaS.Application.Services
     {
 
         private readonly IAppDbContext _context;
-
-        public OrganizationService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public OrganizationService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
         public async Task<OrganizationResponse> CreateAsync(CreateOrganizationRequest request)
@@ -46,8 +48,10 @@ namespace RestaurantSaaS.Application.Services
             return ToResponse(organization);
         }
 
-        public async Task<OrganizationResponse?> GetByIdAsync(int organizationId)
+        public async Task<OrganizationResponse?> GetAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organization = await _context.Organizations
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.OrganizationId == organizationId);
@@ -64,11 +68,12 @@ namespace RestaurantSaaS.Application.Services
             return   organizations.Select(ToResponse).ToList();
         }
 
-        public async Task<OrganizationResponse?> UpdateAsync(int organizationId, UpdateOrganizationRequest request)
+        public async Task<OrganizationResponse?> UpdateAsync(UpdateOrganizationRequest request)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
             var organization = await _context.Organizations.FindAsync(organizationId);
-            if (organization is null)
-                return null;
+            if (organization is null) return null;
+
 
             organization.Name = request.Name;
             organization.Email = request.Email;
@@ -81,8 +86,9 @@ namespace RestaurantSaaS.Application.Services
             return ToResponse(organization);
         }
 
-        public async Task<bool> DeleteAsync(int organizationId)
+        public async Task<bool> DeleteAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
             var organization = await _context.Organizations.FindAsync(organizationId);
             if (organization is null)
                 return false;

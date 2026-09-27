@@ -3,6 +3,7 @@
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,14 +17,17 @@ namespace RestaurantSaaS.Application.Services
     public class RoleService : IRoleService
     {
         private readonly IAppDbContext _context;
-
-        public RoleService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public RoleService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
-        public async Task<RoleResponse> CreateCustomAsync(int organizationId, CreateCustomRoleRequest request)
+        public async Task<RoleResponse> CreateCustomAsync( CreateCustomRoleRequest request)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
 
@@ -57,8 +61,10 @@ namespace RestaurantSaaS.Application.Services
                 ?? throw new InvalidOperationException("Failed to retrieve the created role.");
         }
 
-        public async Task<RoleResponse> AddSystemRoleAsync(int organizationId, int systemRoleId)
+        public async Task<RoleResponse> AddSystemRoleAsync( int systemRoleId)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
 
@@ -125,8 +131,10 @@ namespace RestaurantSaaS.Application.Services
 
             return role ;
         }
-        public async Task<List<RoleResponse>> GetAllByOrganizationAsync(int organizationId)
+        public async Task<List<RoleResponse>> GetAllAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             return await _context.Roles
                 .AsNoTracking()
                 .Where(r => r.OrganizationId == organizationId)

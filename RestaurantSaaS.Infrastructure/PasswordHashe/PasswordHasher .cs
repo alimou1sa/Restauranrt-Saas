@@ -1,20 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity;
-using RestaurantSaaS.Application.InterfacesService;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using RestaurantSaaS.Application.InterfacesService;
+using System.Security.Cryptography;
 
-namespace RestaurantSaaS.Infrastructure.PasswordHash
+namespace RestaurantSaaS.Infrastructure.PasswordHashe
 {
 
     public class PasswordHasher : IPasswordHasher
     {
         public string Hash(string password)
         {
-          
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 

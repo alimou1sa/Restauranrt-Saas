@@ -17,7 +17,7 @@ namespace RestaurantSaaS.Application.InterfacesService
         Task<OrderDetailsResponse?> GetByIdAsync(int orderId);
 
 
-        Task<List<OrderListResponse>> GetAllByOrganizationAsync(int organizationId);
+        Task<List<OrderListResponse>> GetAllAsync();
 
         Task<OrderDetailsResponse?> UpdateAsync(int orderId, UpdateOrderRequest request);
 

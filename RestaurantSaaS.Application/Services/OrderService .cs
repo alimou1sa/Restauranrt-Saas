@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using global::RestaurantSaaS.Application.DTOs.OrderItems.OrderItemsRequest;
+﻿using global::RestaurantSaaS.Application.DTOs.OrderItems.OrderItemsRequest;
 using global::RestaurantSaaS.Application.DTOs.OrderItems.OrderItemsResponse;
 using global::RestaurantSaaS.Application.DTOs.Orders.OrdersRequest;
 using global::RestaurantSaaS.Application.DTOs.Orders.OrdersResponse;
 using global::RestaurantSaaS.Application.InterfacesService;
 using global::RestaurantSaaS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
@@ -21,10 +22,11 @@ namespace RestaurantSaaS.Application.Services
         private static readonly string[] ClosedStatuses = { "Completed", "Canceled" };
 
         private readonly IAppDbContext _context;
-
-        public OrderService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public OrderService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
         public async Task<OrderDetailsResponse> CreateAsync(int branchId, CreateOrderRequest request)
@@ -121,8 +123,10 @@ namespace RestaurantSaaS.Application.Services
         }
 
 
-        public async Task<List<OrderListResponse>> GetAllByOrganizationAsync(int organizationId)
+        public async Task<List<OrderListResponse>> GetAllAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             return await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.Branch.OrganizationId == organizationId)

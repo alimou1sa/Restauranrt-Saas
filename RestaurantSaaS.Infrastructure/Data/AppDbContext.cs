@@ -2,23 +2,31 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
-using RestaurantSaaS.Infrastructure;
-using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
+
 
 namespace RestaurantSaaS.Infrastructure.Data;
 
 public partial class AppDbContext : DbContext, IAppDbContext
 {
-    private readonly ICurrentUser _currentUser;
+    private readonly ICurrentTenant _currentTenant;
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser currentUser): base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenant currentTenant) : base(options)
     {
-        _currentUser = currentUser;
+        _currentTenant = currentTenant;
     }
 
+    // =========================================================
+    // Current Tenant Context
+    // =========================================================
+
+    public int? CurrentOrganizationId => _currentTenant.OrganizationId;
+
+    public int? CurrentBranchId => _currentTenant.BranchId;
+
+//-----------------------------------------------------------
 
     public virtual DbSet<Branch> Branches { get; set; }
 
@@ -59,14 +67,136 @@ public partial class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
+
     public virtual DbSet<SystemRole> SystemRoles { get; set; }
 
-  /*  protected override void OnModelCreating(ModelBuilder modelBuilder)
+
+    // =========================================================
+    // Model Configuration
+    // =========================================================
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        ApplyTenantFilters(modelBuilder);
+        ApplyBranchScopedFilters(modelBuilder);
+
         OnModelCreatingPartial(modelBuilder);
-    }*/
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+    }
+
+
+    // =========================================================
+    // Organization / Tenant Filters
+    // =========================================================
+
+    private void ApplyTenantFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var clrType = entityType.ClrType;
+
+            if (typeof(ITenantEntity).IsAssignableFrom(clrType))
+            {
+                modelBuilder.Entity(clrType).HasQueryFilter(BuildTenantFilter(clrType));
+            }
+        }
+    }
+
+
+    private LambdaExpression BuildTenantFilter(Type clrType)
+    {
+        var parameter = Expression.Parameter(clrType, "e");
+
+        var organizationIdProperty =Expression.Property(parameter,nameof(ITenantEntity.OrganizationId));
+
+        var contextExpression =Expression.Constant(this);
+
+        var currentOrganizationId =Expression.Property(contextExpression,nameof(CurrentOrganizationId));
+
+        var hasValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.HasValue));
+
+        var value =Expression.Property(currentOrganizationId,nameof(Nullable<int>.Value));
+
+
+        var organizationMatches =Expression.Equal(organizationIdProperty,value);
+
+
+        var body =Expression.AndAlso(hasValue,organizationMatches);
+
+        return Expression.Lambda(body,parameter);
+    }
+
+
+    // =========================================================
+    // Branch Scoped Filters
+    // =========================================================
+
+    private void ApplyBranchScopedFilters(ModelBuilder modelBuilder)
+    {
+        ApplyBranchScopedFilter<Menu>(modelBuilder,e => e.Branch);
+
+        ApplyBranchScopedFilter<RestaurantTable>(modelBuilder,e => e.Branch);
+
+        ApplyBranchScopedFilter<Inventory>(modelBuilder,e => e.Branch);
+
+        ApplyBranchScopedFilter<Order>(modelBuilder,e => e.Branch);
+
+        ApplyBranchScopedFilter<Category>(modelBuilder,e => e.Menu.Branch);
+        ApplyBranchScopedFilter<Product>(modelBuilder,e => e.Category.Menu.Branch);
+        ApplyBranchScopedFilter<OrderItem>(modelBuilder,e => e.Order.Branch);
+
+        ApplyBranchScopedFilter<Payment>(modelBuilder,e => e.Order.Branch);
+
+        ApplyBranchScopedFilter<InventoryTransaction>(modelBuilder,e => e.Inventory.Branch);
+    }
+
+
+    private void ApplyBranchScopedFilter<TEntity>(ModelBuilder modelBuilder,Expression<Func<TEntity, Branch>> branchSelector)where TEntity : class
+    {
+        var parameter = branchSelector.Parameters[0];
+
+        var branchAccess = branchSelector.Body;
+
+        var branchOrganizationId =Expression.Property(branchAccess,nameof(Branch.OrganizationId));
+
+        var contextExpression =Expression.Constant(this);
+
+        var currentOrganizationId =Expression.Property(contextExpression,nameof(CurrentOrganizationId));
+
+        var organizationHasValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.HasValue));
+
+        var organizationValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.Value));
+
+        var organizationMatches =Expression.Equal(branchOrganizationId,organizationValue);
+
+        var tenantCheck =Expression.AndAlso(organizationHasValue,organizationMatches);
+
+        var branchId =Expression.Property(branchAccess,nameof(Branch.BranchId));
+
+        var currentBranchId =Expression.Property(contextExpression,nameof(CurrentBranchId));
+
+        var branchHasValue =Expression.Property(currentBranchId,nameof(Nullable<int>.HasValue));
+
+        var branchNotRestricted =Expression.Not(branchHasValue);
+
+        var branchValue =Expression.Property(currentBranchId,nameof(Nullable<int>.Value));
+
+        var branchMatches =Expression.Equal(branchId,branchValue);
+
+        var branchCheck =Expression.OrElse(branchNotRestricted,branchMatches);
+
+        var body =Expression.AndAlso(tenantCheck,branchCheck);
+
+        var lambda =Expression.Lambda<Func<TEntity, bool>>(body,parameter);
+
+        modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);
+    }
+
+
+    // =========================================================
+    // Transaction
+    // =========================================================
 
     public async Task<IDbContextTransaction> BeginTransactionAsync()
     {
@@ -74,71 +204,5 @@ public partial class AppDbContext : DbContext, IAppDbContext
     }
 
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-
-
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        {
-            var clrType = entityType.ClrType;
-            if (typeof(ITenantEntity).IsAssignableFrom(clrType))
-                modelBuilder.Entity(clrType).HasQueryFilter(BuildTenantFilter(clrType));
-        }
-
-
-        ApplyBranchScopedFilter<Menu>(modelBuilder, e => e.Branch);
-        ApplyBranchScopedFilter<RestaurantTable>(modelBuilder, e => e.Branch);
-        ApplyBranchScopedFilter<Inventory>(modelBuilder, e => e.Branch);
-        ApplyBranchScopedFilter<Order>(modelBuilder, e => e.Branch);
-        ApplyBranchScopedFilter<Category>(modelBuilder, e => e.Menu.Branch);
-        ApplyBranchScopedFilter<Product>(modelBuilder, e => e.Category.Menu.Branch);
-        ApplyBranchScopedFilter<OrderItem>(modelBuilder, e => e.Order.Branch);
-        ApplyBranchScopedFilter<Payment>(modelBuilder, e => e.Order.Branch);
-        ApplyBranchScopedFilter<InventoryTransaction>(modelBuilder, e => e.Inventory.Branch);
-
-        OnModelCreatingPartial(modelBuilder);
-    }
-
-    private LambdaExpression BuildTenantFilter(Type clrType)
-    {
-        var parameter = Expression.Parameter(clrType, "e");
-        var property = Expression.Property(parameter, nameof(ITenantEntity.OrganizationId));
-
-        var currentUserConst = Expression.Constant(_currentUser);
-        var orgIdProp = Expression.Property(currentUserConst, nameof(ICurrentUser.OrganizationId));
-        var hasValue = Expression.Property(orgIdProp, nameof(Nullable<int>.HasValue));
-        var value = Expression.Property(orgIdProp, nameof(Nullable<int>.Value));
-
-        var body = Expression.AndAlso(hasValue, Expression.Equal(property, value));
-        return Expression.Lambda(body, parameter);
-    }
-
-    private void ApplyBranchScopedFilter<TEntity>(ModelBuilder modelBuilder
-        ,Expression<Func<TEntity, Branch>> branchSelector) where TEntity : class
-    {
-        var parameter = branchSelector.Parameters[0];
-        var branchAccess = branchSelector.Body;
-
-        var currentUserConst = Expression.Constant(_currentUser);
-
-        var branchOrgId = Expression.Property(branchAccess, nameof(Branch.OrganizationId));
-        var orgIdProp = Expression.Property(currentUserConst, nameof(ICurrentUser.OrganizationId));
-        var orgHasValue = Expression.Property(orgIdProp, nameof(Nullable<int>.HasValue));
-        var orgValue = Expression.Property(orgIdProp, nameof(Nullable<int>.Value));
-        var tenantCheck = Expression.AndAlso(orgHasValue, Expression.Equal(branchOrgId, orgValue));
-
-        var branchIdOfChain = Expression.Property(branchAccess, nameof(Branch.BranchId));
-        var branchIdProp = Expression.Property(currentUserConst, nameof(ICurrentUser.BranchId));
-        var branchHasValue = Expression.Property(branchIdProp, nameof(Nullable<int>.HasValue));
-        var branchNotRestricted = Expression.Not(branchHasValue);
-        var branchValue = Expression.Property(branchIdProp, nameof(Nullable<int>.Value));
-        var branchCheck = Expression.OrElse(branchNotRestricted, Expression.Equal(branchIdOfChain, branchValue));
-
-        var body = Expression.AndAlso(tenantCheck, branchCheck);
-        var lambda = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
-
-        modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);
-    }
-
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

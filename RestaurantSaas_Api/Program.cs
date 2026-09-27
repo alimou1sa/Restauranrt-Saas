@@ -8,12 +8,13 @@ using Microsoft.OpenApi.Models;
 using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.InterfacesService;
 using RestaurantSaaS.Application.Services;
+using RestaurantSaaS.Domain.Common;
+using RestaurantSaaS.Infrastructure;
 using RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Auth.RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Data;
-using RestaurantSaaS.Infrastructure.PasswordHash;
+using RestaurantSaaS.Infrastructure.PasswordHashe;
 using System.Text;
-using RestaurantSaaS.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,40 +42,19 @@ builder.Services
         };
     });
 
-/*
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
 
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    builder.Configuration["Jwt:Key"]!))
-        };
-    });*/
-
-//builder.Services.AddAuthorization();
 
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<IPermissionService, PermissionService>();
-//builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-//builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
-    // للـ endpoints التي يجب أن تقبل Pre-Auth Token أيضًا (اختيار/عرض المؤسسات)
+
     options.AddPolicy("AuthenticatedAny", p => p.RequireAuthenticatedUser());
 
-    // الافتراضي لكل [Authorize] بلا Policy محدد: يشترط Access Token فعليًا
+
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .RequireClaim(AppClaimTypes.TokenType, TokenTypes.Access)
@@ -82,11 +62,14 @@ builder.Services.AddAuthorization(options =>
 });
 
 
-builder.Services.AddDbContext<AppDbContext>(options =>options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<ICurrentTenant, CurrentTenant >();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

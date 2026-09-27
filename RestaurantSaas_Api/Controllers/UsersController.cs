@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
 namespace RestaurantSaas_Api.Controllers
 {
-   // [Authorize]
+   [Authorize]
     [ApiController]
     [Route("api/users")]
     public class UsersController : ControllerBase
@@ -101,26 +101,16 @@ namespace RestaurantSaas_Api.Controllers
         }
 
    
-        [HttpPut("{userId:int}/password",Name = "ChangeUserPassword")]
-        public async Task<IActionResult> ChangePassword(int userId,[FromBody] ChangePasswordRequest request)
+        [HttpPut("password",Name = "ChangeMyPassword")]
+        public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordRequest request)
         {
-            if (userId <= 0)
-            {
-                return BadRequest(new
-                {
-                    message = "User ID must be greater than 0."
-                });
-            }
 
             try
             {
-                var changed = await _userService.ChangePasswordAsync(
-                    userId,
-                    request);
+                var changed = await _userService.ChangePasswordAsync(request);
 
                 return changed
-                    ? NoContent()
-                    : NotFound(new
+                    ? NoContent(): NotFound(new
                     {
                         message = "User not found."
                     });

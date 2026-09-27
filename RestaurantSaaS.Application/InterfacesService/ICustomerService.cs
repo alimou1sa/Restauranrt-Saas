@@ -10,11 +10,11 @@ namespace RestaurantSaaS.Application.InterfacesService
 
     public interface ICustomerService
     {
-        Task<CustomerDetailsResponse> CreateAsync(int organizationId, CreateCustomerRequest request);
+        Task<CustomerDetailsResponse> CreateAsync(CreateCustomerRequest request);
 
         Task<CustomerDetailsResponse?> GetByIdAsync(int customerId);
 
-        Task<List<CustomerListResponse>> GetAllByOrganizationAsync(int organizationId);
+        Task<List<CustomerListResponse>> GetAllAsync();
 
         Task<CustomerDetailsResponse?> UpdateAsync(int customerId, UpdateCustomerRequest request);
 

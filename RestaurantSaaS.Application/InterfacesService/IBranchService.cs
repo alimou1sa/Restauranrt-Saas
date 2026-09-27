@@ -9,11 +9,11 @@ namespace RestaurantSaaS.Application.InterfacesService
 {
     public interface IBranchService
     {
-        Task<BranchResponse> CreateAsync(int organizationId, CreateBranchRequest request);
+        Task<BranchResponse> CreateAsync( CreateBranchRequest request);
 
         Task<BranchResponse?> GetByIdAsync(int id);
 
-        Task<List<BranchResponse>> GetAllByOrganizationAsync(int organizationId);
+        Task<List<BranchResponse>> GetAllAsync();
 
         Task<BranchResponse?> UpdateAsync(int id,UpdateBranchRequest request);
 

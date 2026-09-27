@@ -20,18 +20,16 @@ namespace RestaurantSaas_Api.Controllers
             _roleService = roleService;
         }
 
-        [HttpPost("organizations/{organizationId}/custom", Name = "CreateRoleByOrganization")]
-        public async Task<ActionResult<RoleResponse>> CreateCustom(int organizationId,CreateCustomRoleRequest request)
+        [HttpPost("custom", Name = "CreateRole")]
+        public async Task<ActionResult<RoleResponse>> CreateRole(CreateCustomRoleRequest request)
         {
             try
             {
-                if (organizationId <= 0)
-                    return BadRequest(new { message = "Organization ID must be greater than 0." });
 
 
-                var role = await _roleService.CreateCustomAsync(organizationId, request);
+                var role = await _roleService.CreateCustomAsync( request);
 
-                return CreatedAtRoute("GetRoleByOrganiGetByIdzation", new { roleId = role.RoleId },role);
+                return CreatedAtRoute("GetRoleByroleId", new { roleId = role.RoleId },role);
             }
             catch (KeyNotFoundException ex)
             {
@@ -43,17 +41,15 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-        [HttpPost("organizations/{organizationId}/system/{systemRoleId}", Name = "AddSystemRole")]
-        public async Task<ActionResult<RoleResponse>> AddSystemRole(int organizationId,int systemRoleId)
+        [HttpPost("system/{systemRoleId}", Name = "AddSystemRole")]
+        public async Task<ActionResult<RoleResponse>> AddSystemRole(int systemRoleId)
         {
             try
             {
-                if (organizationId <= 0)
-                    return BadRequest(new { message = "Organization ID must be greater than 0." });
+       
                 if (systemRoleId <= 0)
                     return BadRequest(new { message = "System Role ID must be greater than 0." });
-                var role = await _roleService
-                    .AddSystemRoleAsync(organizationId, systemRoleId);
+                var role = await _roleService.AddSystemRoleAsync(systemRoleId);
 
                 return CreatedAtRoute("GetRoleByOrganiGetByIdzation", new { roleId = role.RoleId },role);
             }
@@ -67,7 +63,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-        [HttpGet("{roleId}", Name = "GetRoleByOrganiGetByIdzation")]
+        [HttpGet("Role/{roleId}", Name = "GetRoleByroleId")]
         public async Task<ActionResult<RoleResponse>> GetById(int roleId)
         {
             var role = await _roleService
@@ -79,10 +75,10 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(role);
         }
 
-        [HttpGet("organizations/{organizationId}", Name = "GetByOrganization")]
-        public async Task<ActionResult<List<RoleResponse>>> GetAllByOrganization(int organizationId)
+        [HttpGet( Name = "GetRoles")]
+        public async Task<ActionResult<List<RoleResponse>>> GetRoles()
         {
-            var roles = await _roleService.GetAllByOrganizationAsync(organizationId);
+            var roles = await _roleService.GetAllAsync();
 
             return Ok(roles);
         }

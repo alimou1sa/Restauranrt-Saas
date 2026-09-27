@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace RestaurantSaas_Api.Controllers
 {
 
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/OrganizationUsers")]
     public class OrganizationUsersController : ControllerBase
@@ -19,14 +19,13 @@ namespace RestaurantSaas_Api.Controllers
             _organizationUserService = organizationUserService;
         }
 
-        [HttpPost("organizations/{organizationId:int}", Name = "CreateOrganizationUser")]
-        public async Task<ActionResult<OrganizationUserResponse>> Create(int organizationId,[FromBody] CreateOrganizationUserRequest request)
+        [HttpPost( Name = "CreateOrganizationUser")]
+        public async Task<ActionResult<OrganizationUserResponse>> Create([FromBody] CreateOrganizationUserRequest request)
         {
-            if (organizationId <= 0)return BadRequest(new { message = "Organization ID must be greater than 0." });
 
             try
             {
-                var organizationUser = await _organizationUserService.CreateAsync(organizationId, request);
+                var organizationUser = await _organizationUserService.CreateAsync( request);
                 return CreatedAtRoute("GetOrganizationUserById", new { organizationUserId = organizationUser.OrganizationUserId }, organizationUser);
             }
             catch (KeyNotFoundException ex)
@@ -49,13 +48,12 @@ namespace RestaurantSaas_Api.Controllers
             return organizationUser is null? NotFound(new { message = "Organization member not found." }): Ok(organizationUser);
         }
 
-        [HttpGet("organizations/{organizationId:int}", Name = "GetOrganizationUsersByOrganization")]
-        public async Task<ActionResult<IEnumerable<OrganizationUserResponse>>> GetAllByOrganization(int organizationId)
+        [HttpGet( Name = "GetOrganizationUsers")]
+        public async Task<ActionResult<IEnumerable<OrganizationUserResponse>>> GetOrganizationUsers()
         {
-            if (organizationId <= 0)
-                return BadRequest(new { message = "Organization ID must be greater than 0." });
 
-            var organizationUsers = await _organizationUserService.GetAllByOrganizationAsync(organizationId);
+
+            var organizationUsers = await _organizationUserService.GetAllAsync();
             return Ok(organizationUsers);
         }
 

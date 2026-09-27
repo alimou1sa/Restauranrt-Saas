@@ -20,7 +20,7 @@ namespace RestaurantSaaS.Application.InterfacesService
 
         Task<UserResponse?> UpdateAsync(int id,UpdateUserRequest request);
 
-        Task<bool> ChangePasswordAsync(int id,ChangePasswordRequest request);
+        Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
 
         Task<bool> DeleteAsync(int id);
 

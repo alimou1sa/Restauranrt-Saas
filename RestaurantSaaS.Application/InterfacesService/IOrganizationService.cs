@@ -15,13 +15,13 @@ namespace RestaurantSaaS.Application.InterfacesService
     {
         Task<OrganizationResponse> CreateAsync(CreateOrganizationRequest request);
 
-        Task<OrganizationResponse?> GetByIdAsync(int id);
+        Task<OrganizationResponse?> GetAsync();
 
         Task<List<OrganizationResponse>> GetAllAsync();
 
-        Task<OrganizationResponse?> UpdateAsync(int id,UpdateOrganizationRequest request);
+        Task<OrganizationResponse?> UpdateAsync(UpdateOrganizationRequest request);
 
-        Task<bool> DeleteAsync(int id);
+        Task<bool> DeleteAsync();
     }
 }
 

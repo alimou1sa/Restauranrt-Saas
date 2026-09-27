@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Application.DTOs.Users;
+using RestaurantSaaS.Application.DTOs.Users.UserRequest;
+using RestaurantSaaS.Application.DTOs.Users.UserResponse;
+using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Domain.Common;
+using RestaurantSaaS.Infrastructure;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RestaurantSaaS.Application.DTOs.Users.UserRequest;
-using RestaurantSaaS.Application.DTOs.Users.UserResponse;
-using RestaurantSaaS.Application.InterfacesService;
-using RestaurantSaaS.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using RestaurantSaaS.Application.DTOs.Users;
 
 
 namespace RestaurantSaaS.Application.Services
@@ -19,12 +20,14 @@ namespace RestaurantSaaS.Application.Services
         private readonly IAppDbContext _context;
         private readonly IPasswordHasher _passwordHasher;
 
-     
-        public UserService(IAppDbContext context, IPasswordHasher passwordHasher)
+        private readonly ICurrentUser _currentUser;
+        public UserService(IAppDbContext context, IPasswordHasher passwordHasher, ICurrentUser currentUser)
         {
             _context = context;
             _passwordHasher = passwordHasher;
+            _currentUser = currentUser;
         }
+
 
         public async Task<UserResponse> CreateAsync(CreateUserRequest request)
         {
@@ -95,9 +98,9 @@ namespace RestaurantSaaS.Application.Services
             return ToResponse(user);
         }
 
-        public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request)
+        public async Task<bool> ChangePasswordAsync( ChangePasswordRequest request)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users.FindAsync(_currentUser.UserId);
             if (user is null)
                 return false;
 

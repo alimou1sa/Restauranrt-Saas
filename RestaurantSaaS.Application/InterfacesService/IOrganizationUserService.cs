@@ -12,11 +12,11 @@ namespace RestaurantSaaS.Application.InterfacesService
     public interface IOrganizationUserService
     {
     
-        Task<OrganizationUserResponse> CreateAsync(int organizationId, CreateOrganizationUserRequest request);
+        Task<OrganizationUserResponse> CreateAsync( CreateOrganizationUserRequest request);
 
         Task<OrganizationUserResponse?> GetByIdAsync(int organizationUserId);
 
-        Task<List<OrganizationUserResponse>> GetAllByOrganizationAsync(int organizationId);
+        Task<List<OrganizationUserResponse>> GetAllAsync();
 
         Task<OrganizationUserResponse?> UpdateAsync(int organizationUserId, UpdateOrganizationUserRequest request);
 

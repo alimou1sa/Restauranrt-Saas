@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Customers.CustomersRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.Customers.CustomersRequest;
     using global::RestaurantSaaS.Application.DTOs.Customers.CustomersResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RestaurantSaaS.Application.Services
 {
@@ -15,14 +16,17 @@ namespace RestaurantSaaS.Application.Services
     public class CustomerService : ICustomerService
     {
         private readonly IAppDbContext _context;
-
-        public CustomerService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public CustomerService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
-        public async Task<CustomerDetailsResponse> CreateAsync(int organizationId, CreateCustomerRequest request)
+        public async Task<CustomerDetailsResponse> CreateAsync(CreateCustomerRequest request)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
 
@@ -55,8 +59,10 @@ namespace RestaurantSaaS.Application.Services
             return customer is null ? null : ToDetailsResponse(customer);
         }
 
-        public async Task<List<CustomerListResponse>> GetAllByOrganizationAsync(int organizationId)
+        public async Task<List<CustomerListResponse>> GetAllAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var customers = await _context.Customers
                 .AsNoTracking()
                 .Where(c => c.OrganizationId == organizationId)

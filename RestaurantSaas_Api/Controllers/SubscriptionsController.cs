@@ -18,16 +18,14 @@ namespace RestaurantSaas_Api.Controllers
             _subscriptionService = subscriptionService;
         }
 
-        [HttpPost("organizations/{organizationId:int}/subscription", Name = "CreateSubscription")]
-        public async Task<ActionResult<SubscriptionResponse>> Create(int organizationId,[FromBody] CreateSubscriptionRequest request)
+        [HttpPost("subscription", Name = "CreateSubscription")]
+        public async Task<ActionResult<SubscriptionResponse>> Create([FromBody] CreateSubscriptionRequest request)
         {
-            if (organizationId <= 0)
-                return BadRequest(new { message = "Organization ID must be greater than 0." });
 
             try
             {
-                var subscription = await _subscriptionService.CreateAsync(organizationId, request);
-                return CreatedAtRoute("GetCurrentSubscriptionByOrganization", new { organizationId }, subscription);
+                var subscription = await _subscriptionService.CreateAsync( request);
+                return CreatedAtRoute("GetCurrentSubscription", null, subscription);
             }
             catch (KeyNotFoundException ex)
             {
@@ -39,13 +37,11 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-        [HttpGet("organizations/{organizationId:int}/subscription", Name = "GetCurrentSubscriptionByOrganization")]
-        public async Task<ActionResult<SubscriptionResponse>> GetCurrentByOrganization(int organizationId)
+        [HttpGet("subscription", Name = "GetCurrentSubscription")]
+        public async Task<ActionResult<SubscriptionResponse>> GetCurrentSubscription()
         {
-            if (organizationId <= 0)
-                return BadRequest(new { message = "Organization ID must be greater than 0." });
-
-            var subscription = await _subscriptionService.GetCurrentByOrganizationAsync(organizationId);
+       
+            var subscription = await _subscriptionService.GetCurrentAsync();
 
             return subscription is null
                 ? NotFound(new { message = "This organization has no subscription." })

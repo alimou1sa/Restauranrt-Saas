@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RestaurantSaaS.Application.InterfacesService
+namespace RestaurantSaaS.Domain.Common
 {
-    public interface ICurrentUser
-    {
-        bool IsAuthenticated { get; }
-        int UserId { get; }
 
+
+    public interface ICurrentTenant
+    {
         int? OrganizationId { get; }
 
         int? OrganizationUserId { get; }

@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Categories.CategoriesRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.Categories.CategoriesRequest;
     using global::RestaurantSaaS.Application.DTOs.Categories.CategoriesResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RestaurantSaaS.Application.Services
 {
@@ -15,10 +16,10 @@ namespace RestaurantSaaS.Application.Services
     public class CategoryService : ICategoryService
     {
         private readonly IAppDbContext _context;
-
         public CategoryService(IAppDbContext context)
         {
             _context = context;
+ 
         }
 
         public async Task<CategoryResponse> CreateAsync(int menuId, CreateCategoryRequest request)

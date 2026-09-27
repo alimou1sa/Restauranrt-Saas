@@ -2,6 +2,7 @@
 using global::RestaurantSaaS.Application.InterfacesService;
 using global::RestaurantSaaS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
 
 namespace RestaurantSaaS.Application.Services
 {
@@ -9,19 +10,18 @@ namespace RestaurantSaaS.Application.Services
     public class BranchService : IBranchService
     {
         private readonly IAppDbContext _context;
-
-        public BranchService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public BranchService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
-        public async Task<BranchResponse> CreateAsync(int organizationId, CreateBranchRequest request)
+        public async Task<BranchResponse> CreateAsync( CreateBranchRequest request)
         {
-            var organizationExists = await _context.Organizations
-                .AnyAsync(o => o.OrganizationId == organizationId);
+            var organizationId = _currentTenant.OrganizationId
+            ?? throw new UnauthorizedAccessException("No organization context.");
 
-            if (!organizationExists)
-                throw new KeyNotFoundException($"Organization {organizationId} was not found.");
 
             var nameExists = await _context.Branches
                 .AnyAsync(b => b.OrganizationId == organizationId && b.Name == request.Name);
@@ -54,14 +54,17 @@ namespace RestaurantSaaS.Application.Services
             return branch is null ? null : ToResponse(branch);
         }
 
-        public async Task<List<BranchResponse>> GetAllByOrganizationAsync(int organizationId)
+        public async Task<List<BranchResponse>> GetAllAsync()
         {
+            var organizationId = _currentTenant.OrganizationId
+            ?? throw new UnauthorizedAccessException("No organization context.");
+
             var branches = await _context.Branches
                 .AsNoTracking()
                 .Where(b => b.OrganizationId == organizationId)
                 .ToListAsync();
 
-            return branches.Select(ToResponse).ToList();
+            return  branches.Select(ToResponse).ToList();
         }
 
         public async Task<BranchResponse?> UpdateAsync(int branchId, UpdateBranchRequest request)

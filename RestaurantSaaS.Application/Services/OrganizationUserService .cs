@@ -1,27 +1,31 @@
-﻿using System;
+﻿    using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Application.DTOs.OrganizationUsers.OrganizationUserRequest;
+using RestaurantSaaS.Application.DTOs.OrganizationUsers.OrganizationUserResponse;
+using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Domain.Common;
+using RestaurantSaaS.Infrastructure;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RestaurantSaaS.Application.DTOs.OrganizationUsers.OrganizationUserRequest;
-using RestaurantSaaS.Application.DTOs.OrganizationUsers.OrganizationUserResponse;
-using RestaurantSaaS.Application.InterfacesService;
-using RestaurantSaaS.Infrastructure;
-    using Microsoft.EntityFrameworkCore;
 namespace RestaurantSaaS.Application.Services
 {
 
     public class OrganizationUserService : IOrganizationUserService
     {
         private readonly IAppDbContext _context;
-
-        public OrganizationUserService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public OrganizationUserService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
-        public async Task<OrganizationUserResponse> CreateAsync(int organizationId, CreateOrganizationUserRequest request)
+        public async Task<OrganizationUserResponse> CreateAsync( CreateOrganizationUserRequest request)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
 
@@ -74,8 +78,10 @@ namespace RestaurantSaaS.Application.Services
                 .FirstOrDefaultAsync(ou => ou.OrganizationUserId == organizationUserId);
         }
 
-        public async Task<List<OrganizationUserResponse>> GetAllByOrganizationAsync(int organizationId)
+        public async Task<List<OrganizationUserResponse>> GetAllAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             return await Projection()
                 .Where(ou => ou.OrganizationId == organizationId)
                 .ToListAsync();

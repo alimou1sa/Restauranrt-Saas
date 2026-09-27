@@ -12,13 +12,13 @@ namespace RestaurantSaaS.Application.InterfacesService
 
     public interface IRoleService
     {
-        Task<RoleResponse> CreateCustomAsync(int organizationId,CreateCustomRoleRequest request);
+        Task<RoleResponse> CreateCustomAsync(CreateCustomRoleRequest request);
 
-        Task<RoleResponse> AddSystemRoleAsync(int organizationId,int systemRoleId);
+        Task<RoleResponse> AddSystemRoleAsync(int systemRoleId);
 
         Task<RoleResponse?> GetByIdAsync(int roleId);
 
-        Task<List<RoleResponse>> GetAllByOrganizationAsync(int organizationId);
+        Task<List<RoleResponse>> GetAllAsync();
 
         Task<RoleResponse?> UpdateCustomAsync(int roleId,UpdateCustomRoleRequest request);
 

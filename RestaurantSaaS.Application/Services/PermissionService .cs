@@ -32,8 +32,11 @@ namespace RestaurantSaaS.Application.Services
         {
             var cacheKey = CacheKeyPrefix + organizationUserId;
 
-            if (_cache.TryGetValue(cacheKey, out HashSet<string>? cached) && cached is not null)
+           if (_cache.TryGetValue(cacheKey, out HashSet<string>? cached) && cached is not null)
                 return cached;
+
+            _cache.Remove(cacheKey);
+
 
             var permissions = await LoadPermissionsAsync(organizationUserId);
 
@@ -47,21 +50,26 @@ namespace RestaurantSaaS.Application.Services
         }
 
         private async Task<HashSet<string>> LoadPermissionsAsync(int organizationUserId)
-        {
+        { 
+
+   
 
             var membershipActive = await _context.OrganizationUsers
-                .AsNoTracking()
-                .AnyAsync(ou => ou.OrganizationUserId == organizationUserId &&
-                    ou.IsActive &&ou.RemovedAtUtc == null);
+                             .IgnoreQueryFilters().AsNoTracking()
+             .AnyAsync(ou =>
+                 ou.OrganizationUserId == organizationUserId &&
+                 ou.IsActive &&
+                 ou.RemovedAtUtc == null);
 
             if (!membershipActive)
                 return new HashSet<string>();
 
             var codes = await _context.UserRoles
-                .AsNoTracking()
+                .IgnoreQueryFilters().AsNoTracking()
                 .Where(ur => ur.OrganizationUserId == organizationUserId && ur.Role.IsActive)
                 .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Code))
-                .Distinct().ToListAsync();
+                .Distinct()
+                .ToListAsync();
 
             return codes.ToHashSet();
         }

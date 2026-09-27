@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Subscriptions.SubscriptionsRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.Subscriptions.SubscriptionsRequest;
     using global::RestaurantSaaS.Application.DTOs.Subscriptions.SubscriptionsResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
@@ -15,14 +16,17 @@ namespace RestaurantSaaS.Application.Services
     public class SubscriptionService : ISubscriptionService
     {
         private readonly IAppDbContext _context;
-
-        public SubscriptionService(IAppDbContext context)
+        private readonly ICurrentTenant _currentTenant;
+        public SubscriptionService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
-        public async Task<SubscriptionResponse> CreateAsync(int organizationId, CreateSubscriptionRequest request)
+        public async Task<SubscriptionResponse> CreateAsync( CreateSubscriptionRequest request)
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
 
@@ -63,8 +67,10 @@ namespace RestaurantSaaS.Application.Services
             return ToResponse(subscription, plan.Name);
         }
 
-        public async Task<SubscriptionResponse?> GetCurrentByOrganizationAsync(int organizationId)
+        public async Task<SubscriptionResponse?> GetCurrentAsync()
         {
+            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
             return await _context.Subscriptions
                 .AsNoTracking()
                 .Where(s => s.OrganizationId == organizationId)

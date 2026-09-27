@@ -55,13 +55,12 @@ namespace RestaurantSaas_Api.Controllers
         }
 
 
-        [HttpGet("organizations/{organizationId:int}", Name = "GetOrdersByOrganization")]
-        public async Task<ActionResult<IEnumerable<OrderListResponse>>> GetAllByOrganization(int organizationId)
+        [HttpGet( Name = "GetOrdersByOrganization")]
+        public async Task<ActionResult<IEnumerable<OrderListResponse>>> GetOrders()
         {
-            if (organizationId <= 0)
-                return BadRequest(new { message = "Organization ID must be greater than 0." });
 
-            var orders = await _orderService.GetAllByOrganizationAsync(organizationId);
+
+            var orders = await _orderService.GetAllAsync();
             return Ok(orders);
         }
 

@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Infrastructure;
+using RestaurantSaaS.Infrastructure.Auth;
 
 namespace RestaurantSaas_Api.Controllers
 {
-   // [Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/Branches")]
     public class BranchesController : ControllerBase
@@ -19,16 +21,14 @@ namespace RestaurantSaas_Api.Controllers
             _branchService = branchService;
         }
 
-
-        [HttpPost("organizations/{organizationId:int}",Name = "CreateBranch")]
-        public async Task<ActionResult<BranchResponse>> Create(int organizationId,[FromBody] CreateBranchRequest request)
+        [HasPermission("branch.manage")]
+        [HttpPost( Name = "CreateBranch")]
+        public async Task<ActionResult<BranchResponse>> Create([FromBody] CreateBranchRequest request)
         {
-            if (organizationId <= 0)
-                return BadRequest(new{message = "Organization ID must be greater than 0."});
-
+    
             try
             {
-                var branch = await _branchService.CreateAsync(organizationId,request);
+                var branch = await _branchService.CreateAsync(request);
 
                 return CreatedAtRoute("GetBranchById",new { branchId = branch.BranchId },branch);
 
@@ -43,7 +43,8 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-     
+
+        [HasPermission("branch.read")]
         [HttpGet("{branchId:int}",Name = "GetBranchById")]
         public async Task<ActionResult<BranchResponse>> GetById(int branchId)
         {
@@ -54,22 +55,17 @@ namespace RestaurantSaas_Api.Controllers
             return branch is null? NotFound(new{message = "Branch not found."}): Ok(branch);
         }
 
-      
-        [HttpGet("organizations/{organizationId:int}",Name = "GetBranchesByOrganization")]
-        public async Task<ActionResult<IEnumerable<BranchResponse>>> GetAllByOrganization(int organizationId)
+        [HasPermission("branch.read")]
+        [HttpGet(Name = "GetBranches")]
+        public async Task<ActionResult<IEnumerable<BranchResponse>>> GetBranches()
         {
-            if (organizationId <= 0)
-                return BadRequest(new
-                {
-                    message = "Organization ID must be greater than 0."
-                });
 
-            var branches = await _branchService.GetAllByOrganizationAsync(organizationId);
+            var branches = await _branchService.GetAllAsync();
 
             return Ok(branches);
         }
 
-   
+        [HasPermission("branch.manage")]
         [HttpPut("{branchId:int}",Name = "UpdateBranch")]
         public async Task<ActionResult<BranchResponse>> Update(int branchId,[FromBody] UpdateBranchRequest request)
         {
@@ -94,7 +90,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-       
+        [HasPermission("branch.manage")]
         [HttpDelete("{branchId:int}",Name = "DeleteBranch")]
         public async Task<IActionResult> Delete(int branchId)
         {

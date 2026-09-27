@@ -20,12 +20,12 @@ namespace RestaurantSaas_Api.Controllers
             _customerService = customerService;
         }
 
-        [HttpPost("organizations/{organizationId:int}", Name = "CreateCustomer")]
-        public async Task<ActionResult<CustomerDetailsResponse>> Create(int organizationId,[FromBody] CreateCustomerRequest request)
+        [HttpPost( Name = "CreateCustomer")]
+        public async Task<ActionResult<CustomerDetailsResponse>> CreateCustomer([FromBody] CreateCustomerRequest request)
         {
             try
             {
-                var customer = await _customerService.CreateAsync(organizationId, request);
+                var customer = await _customerService.CreateAsync( request);
                 return CreatedAtRoute("GetCustomerById", new { customerId = customer.CustomerId }, customer);
             }
             catch (KeyNotFoundException ex)
@@ -41,10 +41,10 @@ namespace RestaurantSaas_Api.Controllers
             return customer is null ? NotFound() : Ok(customer);
         }
 
-        [HttpGet("organizations/{organizationId:int}", Name = "GetCustomersByOrganization")]
-        public async Task<ActionResult<IEnumerable<CustomerListResponse>>> GetAllByOrganization(int organizationId)
+        [HttpGet( Name = "GetCustomers")]
+        public async Task<ActionResult<IEnumerable<CustomerListResponse>>> GetCustomers()
         {
-            var customers = await _customerService.GetAllByOrganizationAsync(organizationId);
+            var customers = await _customerService.GetAllAsync();
             return Ok(customers);
         }
 

@@ -1,25 +1,24 @@
 ﻿using Microsoft.AspNetCore.Http;
 using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Domain.Common;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace RestaurantSaaS.Infrastructure.Auth;
 
-public class CurrentUser : ICurrentUser
+public class CurrentTenant : ICurrentTenant
 {
     private readonly ClaimsPrincipal? _user;
 
-    public CurrentUser(IHttpContextAccessor accessor)
+    public CurrentTenant(IHttpContextAccessor accessor)
     {
         _user = accessor.HttpContext?.User;
     }
 
-    public bool IsAuthenticated =>
-        _user?.Identity?.IsAuthenticated ?? false;
+    public int? OrganizationId =>ParseIntClaim(AppClaimTypes.OrganizationId);
 
-    public int UserId =>ParseIntClaim(JwtRegisteredClaimNames.Sub)?? throw
-        new InvalidOperationException("No authenticated user in context.");
+    public int? OrganizationUserId =>ParseIntClaim(AppClaimTypes.OrganizationUserId);
+
+    public int? BranchId =>ParseIntClaim(AppClaimTypes.BranchId);
 
     private int? ParseIntClaim(string claimType)
     {

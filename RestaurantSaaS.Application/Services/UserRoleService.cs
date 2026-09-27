@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.UserRoles.RoleRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.UserRoles.RoleRequest;
     using global::RestaurantSaaS.Application.DTOs.UserRoles.RoleResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
@@ -16,13 +17,17 @@ namespace RestaurantSaaS.Application.Services
     public class UserRoleService : IUserRoleService
     {
         private readonly IAppDbContext _context;
+        private readonly IPermissionService _permissionService; 
 
-        public UserRoleService(IAppDbContext context)
-        {
-            _context = context;
-        }
+            public UserRoleService(IAppDbContext context, IPermissionService permissionService)
+            {
+                _context = context;
+                _permissionService = permissionService;
+            }
 
-        public async Task<UserRoleResponse> AssignAsync(int organizationUserId, AssignRoleRequest request)
+    
+
+            public async Task<UserRoleResponse> AssignAsync(int organizationUserId, AssignRoleRequest request)
         {
             var organizationUser = await _context.OrganizationUsers
                 .FirstOrDefaultAsync(ou => ou.OrganizationUserId == organizationUserId);
@@ -55,7 +60,7 @@ namespace RestaurantSaaS.Application.Services
 
             _context.UserRoles.Add(userRole);
             await _context.SaveChangesAsync();
-
+            _permissionService.InvalidateCache(organizationUserId);
             return ToResponse(userRole, role.Name);
         }
 
@@ -79,8 +84,16 @@ namespace RestaurantSaaS.Application.Services
             var userRole = await _context.UserRoles.FindAsync(userRoleId);
             if (userRole is null)
                 return false;
+          
+
+            var organizationUserId = userRole.OrganizationUserId;   
 
             _context.UserRoles.Remove(userRole);
+            await _context.SaveChangesAsync();
+
+            _permissionService.InvalidateCache(organizationUserId);
+
+
             await _context.SaveChangesAsync();
 
             return true;

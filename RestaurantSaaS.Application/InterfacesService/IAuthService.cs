@@ -12,7 +12,7 @@ namespace RestaurantSaaS.Application.InterfacesService
     public interface IAuthService
     {
         Task<LoginResponse> LoginAsync(LoginRequest request);
-        Task<List<OrganizationOptionResponse>> GetMyOrganizationsAsync(int userId);
-        Task<AuthTokenResponse> SelectOrganizationAsync(int userId, SelectOrganizationRequest request);
+        Task<List<OrganizationOptionResponse>> GetMyOrganizationsAsync();
+        Task<AuthTokenResponse> SelectOrganizationAsync( SelectOrganizationRequest request);
     }
 }

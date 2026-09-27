@@ -6,7 +6,7 @@ using RestaurantSaaS.Application.InterfacesService;
 
 namespace RestaurantSaaS.API.Controllers
 {
-  //  [Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/organizations")]
     public class OrganizationsController : ControllerBase
@@ -18,13 +18,15 @@ namespace RestaurantSaaS.API.Controllers
             _organizationService = organizationService;
         }
 
-        [HttpPost(Name = "CreateOrganization")]
+        [HttpPost("current",Name = "CreateOrganization")]
         public async Task<ActionResult<OrganizationResponse>> Create([FromBody] CreateOrganizationRequest request)
         {
             try
             {
                 var organization = await _organizationService.CreateAsync(request);
-                return CreatedAtAction("GetOrganizationById", new { organizationId = organization.OrganizationId }, organization);
+                return CreatedAtRoute("GetCurrentOrganization", null, organization);
+
+       
             }
             catch (InvalidOperationException ex)
             {
@@ -32,12 +34,12 @@ namespace RestaurantSaaS.API.Controllers
             }
         }
 
-        [HttpGet("{organizationId:int}", Name = "GetOrganizationById")]
-        public async Task<ActionResult<OrganizationResponse>> GetById(int organizationId)
+        [HttpGet("current", Name = "GetCurrentOrganization")]
+        public async Task<ActionResult<OrganizationResponse>> GetCurrentOrganization()
         {
-            if(organizationId<1) return BadRequest($"Not accepted ID {organizationId}");
+  
 
-            var organization = await _organizationService.GetByIdAsync(organizationId);
+            var organization = await _organizationService.GetAsync();
 
             return organization is null ? NotFound() : Ok(organization);
         }
@@ -49,22 +51,20 @@ namespace RestaurantSaaS.API.Controllers
             return Ok(organizations);
         }
 
-        [HttpPut("{organizationId:int}", Name = "UpdateOrganization")]
-        public async Task<ActionResult<OrganizationResponse>> Update(int organizationId,[FromBody] UpdateOrganizationRequest request)
+        [HttpPut("current",Name = "UpdateOrganization")]
+        public async Task<ActionResult<OrganizationResponse>> Update([FromBody] UpdateOrganizationRequest request)
         {
-            if(organizationId<1) return BadRequest($"Not accepted ID {organizationId}");
-
-
-            var organization = await _organizationService.UpdateAsync(organizationId, request);
+    
+            var organization = await _organizationService.UpdateAsync( request);
             return organization is null ? NotFound() : Ok(organization);
         }
 
-        [HttpDelete("{organizationId:int}", Name = "DeleteOrganization")]
-        public async Task<IActionResult> Delete(int organizationId)
+        [HttpDelete("current", Name = "DeleteOrganization")]
+        public async Task<IActionResult> Delete()
         {
             try
             {
-                var deleted = await _organizationService.DeleteAsync(organizationId);
+                var deleted = await _organizationService.DeleteAsync();
                 return deleted ? NoContent() : NotFound();
             }
             catch (DbUpdateException)

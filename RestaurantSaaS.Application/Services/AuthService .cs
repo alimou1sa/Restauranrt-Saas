@@ -5,6 +5,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using RestaurantSaaS.Application.Common;
+using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -24,12 +25,13 @@ namespace RestaurantSaaS.Application.Services
             private readonly IAppDbContext _context;
             private readonly IPasswordHasher _passwordHasher;
             private readonly IJwtTokenGenerator _tokenGenerator;
-
-            public AuthService(IAppDbContext context,IPasswordHasher passwordHasher,IJwtTokenGenerator tokenGenerator)
+        private readonly ICurrentUser _currentUser;
+        public AuthService(IAppDbContext context,IPasswordHasher passwordHasher,IJwtTokenGenerator tokenGenerator, ICurrentUser currentUser)
             {
                 _context = context;
                 _passwordHasher = passwordHasher;
                 _tokenGenerator = tokenGenerator;
+            _currentUser = currentUser;
             }
 
             public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -69,34 +71,44 @@ namespace RestaurantSaaS.Application.Services
                 };
             }
 
-            public async Task<List<OrganizationOptionResponse>> GetMyOrganizationsAsync(int userId)
+            public async Task<List<OrganizationOptionResponse>> GetMyOrganizationsAsync()
             {
-                return await GetActiveOrganizationsAsync(userId);
+                return await GetActiveOrganizationsAsync(_currentUser.UserId);
             }
 
-            public async Task<AuthTokenResponse> SelectOrganizationAsync(int userId, SelectOrganizationRequest request)
+            public async Task<AuthTokenResponse> SelectOrganizationAsync( SelectOrganizationRequest request)
             {
-                var organizationUser = await _context.OrganizationUsers.IgnoreQueryFilters()
-                    .AsNoTracking()
-                    .Include(ou => ou.Organization)
-                    .Include(ou => ou.User)
-                    .FirstOrDefaultAsync(ou =>
-                        ou.UserId == userId &&
-                        ou.OrganizationId == request.OrganizationId &&
-                        ou.IsActive &&
-                        ou.RemovedAtUtc == null);
 
-                if (organizationUser is null
-                    || !organizationUser.Organization.IsActive
-                    || !organizationUser.User.IsActive)
-                {
-                    throw new UnauthorizedAccessException("You are not an active member of this organization.");
-                }
+
+var organizationUser = await _context.OrganizationUsers
+    .IgnoreQueryFilters()
+    .AsNoTracking()
+    .Where(ou =>
+        ou.UserId == _currentUser.UserId && ou.OrganizationId == request.OrganizationId &&
+        ou.IsActive &&ou.RemovedAtUtc == null)
+    .Select(ou => new
+    {
+        ou.OrganizationUserId,
+        ou.OrganizationId,
+        ou.BranchId,
+        UserEmail = ou.User.Email,
+        UserIsActive = ou.User.IsActive,
+        OrganizationIsActive = ou.Organization.IsActive
+    })
+    .FirstOrDefaultAsync();
+
+            if (organizationUser is null ||!organizationUser.OrganizationIsActive ||!organizationUser.UserIsActive)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not an active member of this organization.");
+            }
+
+
 
                 var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new(ClaimTypes.Email, organizationUser.User.Email),
+                new(JwtRegisteredClaimNames.Sub, _currentUser.UserId.ToString()),
+                new(ClaimTypes.Email, organizationUser.UserEmail),
                 new(AppClaimTypes.OrganizationId, organizationUser.OrganizationId.ToString()),
                 new(AppClaimTypes.OrganizationUserId, organizationUser.OrganizationUserId.ToString()),
                 new(AppClaimTypes.TokenType, TokenTypes.Access),
@@ -117,7 +129,7 @@ namespace RestaurantSaaS.Application.Services
                 };
             }
 
-        private async Task<List<OrganizationOptionResponse>> GetActiveOrganizationsAsync(int userId)
+           private async Task<List<OrganizationOptionResponse>> GetActiveOrganizationsAsync(int userId)
         {
 
                 return await _context.OrganizationUsers.IgnoreQueryFilters()
@@ -132,6 +144,8 @@ namespace RestaurantSaaS.Application.Services
                     })
                     .ToListAsync();
             }
+
         }
+
     
 }
