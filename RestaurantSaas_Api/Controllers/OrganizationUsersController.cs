@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -19,6 +20,23 @@ namespace RestaurantSaas_Api.Controllers
             _organizationUserService = organizationUserService;
         }
 
+
+        [HasPermission("user.manage")]
+        [HttpPost("with-roles", Name = "AddOrganizationUserWithRoles")]
+        public async Task<ActionResult<OrganizationUserResponse>> AddWithRoles([FromBody] AddMemberWithRolesRequest request)
+        {
+            try
+            {
+                var result = await _organizationUserService.AddMemberWithRolesAsync(request);
+                return CreatedAtRoute("GetOrganizationUserById", new { organizationUserId = result.OrganizationUserId }, result);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        }
+
+
+
+        [HasPermission("user.manage")]
         [HttpPost( Name = "CreateOrganizationUser")]
         public async Task<ActionResult<OrganizationUserResponse>> Create([FromBody] CreateOrganizationUserRequest request)
         {
@@ -38,6 +56,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("user.read")]
         [HttpGet("{organizationUserId:int}", Name = "GetOrganizationUserById")]
         public async Task<ActionResult<OrganizationUserResponse>> GetById(int organizationUserId)
         {
@@ -48,6 +67,7 @@ namespace RestaurantSaas_Api.Controllers
             return organizationUser is null? NotFound(new { message = "Organization member not found." }): Ok(organizationUser);
         }
 
+        [HasPermission("user.read")]
         [HttpGet( Name = "GetOrganizationUsers")]
         public async Task<ActionResult<IEnumerable<OrganizationUserResponse>>> GetOrganizationUsers()
         {
@@ -57,6 +77,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(organizationUsers);
         }
 
+        [HasPermission("user.manage")]
         [HttpPut("{organizationUserId:int}", Name = "UpdateOrganizationUser")]
         public async Task<ActionResult<OrganizationUserResponse>> Update(int organizationUserId,[FromBody] UpdateOrganizationUserRequest request)
         {
@@ -77,7 +98,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
-
+        [HasPermission("user.manage")]
         [HttpDelete("{organizationUserId:int}", Name = "DeleteOrganizationUser")]
         public async Task<IActionResult> Delete(int organizationUserId)
         {

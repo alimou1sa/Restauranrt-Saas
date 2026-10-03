@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsRequest;
+﻿    using global::RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsRequest;
     using global::RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
     using global::RestaurantSaaS.Infrastructure;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
@@ -20,7 +21,7 @@ namespace RestaurantSaaS.Application.Services
         {
             _context = context;
         }
-
+/*
         public async Task<RolePermissionResponse> AssignAsync(int roleId, AssignPermissionRequest request)
         {
             var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == roleId);
@@ -50,8 +51,34 @@ namespace RestaurantSaaS.Application.Services
 
             return ToResponse(rolePermission, permission.Code, permission.Name);
         }
+        */
+        public async Task<RolePermissionResponse> AssignAsync(int roleId, AssignPermissionRequest request)
+        {
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleId == roleId);  
+            if (role is null) throw new KeyNotFoundException($"Role {roleId} was not found.");
 
-  
+            if (role.SystemRoleId.HasValue) 
+                throw new InvalidOperationException("Cannot assign permissions directly to a system role instance; system role permissions are managed centrally via SystemRolePermissions.");
+
+            var permission = await _context.Permissions
+                .FirstOrDefaultAsync(p => p.PermissionId == request.PermissionId);
+
+            if (permission is null)
+                throw new KeyNotFoundException($"Permission {request.PermissionId} was not found.");
+
+            var alreadyAssigned = await _context.RolePermissions
+                .AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == request.PermissionId);
+
+            if (alreadyAssigned)
+                throw new InvalidOperationException("This permission is already assigned to this role.");
+
+            var rolePermission = new RolePermission { RoleId = roleId, PermissionId = request.PermissionId };
+            _context.RolePermissions.Add(rolePermission);
+            await _context.SaveChangesAsync();
+
+            return ToResponse(rolePermission, permission.Code, permission.Name);
+        }
+
         public async Task<List<RolePermissionResponse>> GetAllByRoleAsync(int roleId)
         {
             return await _context.RolePermissions

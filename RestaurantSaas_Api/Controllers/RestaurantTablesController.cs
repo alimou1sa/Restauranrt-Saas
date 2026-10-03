@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using RestaurantSaaS.Infrastructure;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -20,6 +21,7 @@ namespace RestaurantSaas_Api.Controllers
             _restaurantTableService = restaurantTableService;
         }
 
+        [HasPermission("table.manage")]
         [HttpPost("api/branches/{branchId:int}/tables" , Name = "CreateRestaurantTable")]
         public async Task<ActionResult<RestaurantTableResponse>> Create(int branchId, [FromBody] CreateRestaurantTableRequest request)
         {
@@ -39,6 +41,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("table.read")]
         [HttpGet("api/tables/{tableId:int}", Name = "GetRestaurantTableByid")]
         public async Task<ActionResult<RestaurantTableResponse>> GetById(int tableId)
         {
@@ -48,6 +51,7 @@ namespace RestaurantSaas_Api.Controllers
             return table is null ? NotFound() : Ok(table);
         }
 
+        [HasPermission("table.read")]
         [HttpGet("api/branches/{branchId:int}/tables", Name = "GetAllRestaurantTable")]
         public async Task<ActionResult<IEnumerable<RestaurantTableResponse>>> GetAllByBranch(int branchId)
         {
@@ -55,6 +59,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(tables);
         }
 
+        [HasPermission("table.manage")]
         [HttpPut("api/tables/{tableId:int}", Name = "UpdateRestaurantTable")]
         public async Task<ActionResult<RestaurantTableResponse>> Update(int tableId, [FromBody] UpdateRestaurantTableRequest request)
         {
@@ -70,6 +75,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("table.manage")]
         [HttpDelete("api/tables/{tableId:int}", Name = "DeleteRestaurantTable")]
         public async Task<IActionResult> Delete(int tableId)
         {

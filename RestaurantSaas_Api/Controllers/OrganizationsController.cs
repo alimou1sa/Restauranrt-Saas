@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Application.DTOs.Organizations.OrganizationsRequest;
 using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Infrastructure.Auth;
 
 namespace RestaurantSaaS.API.Controllers
 {
-    [Authorize]
+
     [ApiController]
     [Route("api/organizations")]
     public class OrganizationsController : ControllerBase
@@ -17,6 +18,7 @@ namespace RestaurantSaaS.API.Controllers
         {
             _organizationService = organizationService;
         }
+  
 
         [HttpPost("current",Name = "CreateOrganization")]
         public async Task<ActionResult<OrganizationResponse>> Create([FromBody] CreateOrganizationRequest request)
@@ -34,6 +36,7 @@ namespace RestaurantSaaS.API.Controllers
             }
         }
 
+        [HasPermission("organization.read")]
         [HttpGet("current", Name = "GetCurrentOrganization")]
         public async Task<ActionResult<OrganizationResponse>> GetCurrentOrganization()
         {
@@ -51,6 +54,7 @@ namespace RestaurantSaaS.API.Controllers
             return Ok(organizations);
         }
 
+        [HasPermission("organization.update")]
         [HttpPut("current",Name = "UpdateOrganization")]
         public async Task<ActionResult<OrganizationResponse>> Update([FromBody] UpdateOrganizationRequest request)
         {

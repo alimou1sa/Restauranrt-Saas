@@ -1,11 +1,12 @@
-﻿using System;
+﻿    using global::RestaurantSaaS.Application.DTOs.OrderItems.OrderItemsRequest;
+    using global::RestaurantSaaS.Application.DTOs.Orders.OrdersRequest;
+    using global::RestaurantSaaS.Application.DTOs.Orders.OrdersResponse;
+using RestaurantSaaS.Application.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.OrderItems.OrderItemsRequest;
-    using global::RestaurantSaaS.Application.DTOs.Orders.OrdersRequest;
-    using global::RestaurantSaaS.Application.DTOs.Orders.OrdersResponse;
 
 namespace RestaurantSaaS.Application.InterfacesService
 {

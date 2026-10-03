@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Infrastructure;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -20,6 +21,7 @@ namespace RestaurantSaas_Api.Controllers
             _roleService = roleService;
         }
 
+        [HasPermission("role.manage")]
         [HttpPost("custom", Name = "CreateRole")]
         public async Task<ActionResult<RoleResponse>> CreateRole(CreateCustomRoleRequest request)
         {
@@ -41,6 +43,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("role.manage")]
         [HttpPost("system/{systemRoleId}", Name = "AddSystemRole")]
         public async Task<ActionResult<RoleResponse>> AddSystemRole(int systemRoleId)
         {
@@ -63,6 +66,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("role.read")]
         [HttpGet("Role/{roleId}", Name = "GetRoleByroleId")]
         public async Task<ActionResult<RoleResponse>> GetById(int roleId)
         {
@@ -75,6 +79,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(role);
         }
 
+        [HasPermission("role.read")]
         [HttpGet( Name = "GetRoles")]
         public async Task<ActionResult<List<RoleResponse>>> GetRoles()
         {
@@ -83,6 +88,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(roles);
         }
 
+        [HasPermission("role.manage")]
         [HttpPut("{roleId}",Name ="UpdateRole")]
         public async Task<ActionResult<RoleResponse>> UpdateCustom(int roleId,UpdateCustomRoleRequest request)
         {
@@ -104,6 +110,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("role.manage")]
         [HttpDelete("{roleId}",Name = "DeleteRole")]
         public async Task<IActionResult> DeleteCustom(int roleId)
         {

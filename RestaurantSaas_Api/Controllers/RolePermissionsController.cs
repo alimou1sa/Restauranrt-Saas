@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -19,6 +20,8 @@ namespace RestaurantSaas_Api.Controllers
             _rolePermissionService = rolePermissionService;
         }
 
+
+        [HasPermission("role.manage")]
         [HttpPost("roles/{roleId:int}/", Name = "AssignRolePermission")]
         public async Task<ActionResult<RolePermissionResponse>> Assign(int roleId,[FromBody] AssignPermissionRequest request)
         {
@@ -40,6 +43,8 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+
+        [HasPermission("role.read")]
         [HttpGet("roles/{roleId:int}/", Name = "GetRolePermissionsByRole")]
         public async Task<ActionResult<IEnumerable<RolePermissionResponse>>> GetAllByRole(int roleId)
         {
@@ -50,6 +55,8 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(rolePermissions);
         }
 
+
+        [HasPermission("role.manage")]
         [HttpDelete("{rolePermissionId:int}", Name = "RemoveRolePermission")]
         public async Task<IActionResult> Remove(int rolePermissionId)
         {

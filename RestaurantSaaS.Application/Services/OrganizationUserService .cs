@@ -15,12 +15,91 @@ namespace RestaurantSaaS.Application.Services
     public class OrganizationUserService : IOrganizationUserService
     {
         private readonly IAppDbContext _context;
-        private readonly ICurrentTenant _currentTenant;
-        public OrganizationUserService(IAppDbContext context, ICurrentTenant currentTenant)
+        private readonly ICurrentTenant _currentTenant;  
+        private readonly IPermissionService _permissionService;   
+        public OrganizationUserService(IAppDbContext context, ICurrentTenant currentTenant, IPermissionService permissionService)
         {
             _context = context;
             _currentTenant = currentTenant;
+            _permissionService = permissionService;
         }
+
+   
+       public async Task<OrganizationUserResponse> AddMemberWithRolesAsync(AddMemberWithRolesRequest request)
+       {
+                var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == request.UserId);
+                if (user is null)
+                    throw new KeyNotFoundException($"User {request.UserId} was not found.");
+
+                if (request.BranchId.HasValue)
+                {
+                    var branchBelongsToOrg = await _context.Branches
+                        .AnyAsync(b => b.BranchId == request.BranchId.Value && b.OrganizationId == organizationId);
+                    if (!branchBelongsToOrg)
+                        throw new KeyNotFoundException($"Branch {request.BranchId} does not belong to this organization.");
+                }
+
+                var alreadyMember = await _context.OrganizationUsers
+                    .AnyAsync(ou => ou.OrganizationId == organizationId && ou.UserId == request.UserId);
+                if (alreadyMember)
+                    throw new InvalidOperationException("This user is already a member of this organization.");
+
+                var distinctRoleIds = request.RoleIds.Distinct().ToList();
+                var roles = await _context.Roles.Where(r => distinctRoleIds.Contains(r.RoleId)).ToListAsync();
+
+                if (roles.Count != distinctRoleIds.Count)
+                    throw new KeyNotFoundException("One or more roles were not found.");
+
+                if (roles.Any(r => r.OrganizationId != organizationId))
+                    throw new InvalidOperationException("One or more roles do not belong to this organization.");
+
+                await using var transaction = await _context.BeginTransactionAsync();
+                try
+                {
+                    var organizationUser = new OrganizationUser
+                    {
+                        OrganizationId = organizationId,
+                        UserId = request.UserId,
+                        BranchId = request.BranchId,
+                        IsActive = true,
+                        JoinedAtUtc = DateTime.UtcNow
+                    };
+                    _context.OrganizationUsers.Add(organizationUser);
+                    await _context.SaveChangesAsync();  
+
+                    foreach (var roleId in distinctRoleIds)
+                    {
+                        _context.UserRoles.Add(new UserRole
+                        {
+                            OrganizationUserId = organizationUser.OrganizationUserId,
+                            RoleId = roleId,
+                            OrganizationId = organizationId,
+                            AssignedAtUtc = DateTime.UtcNow
+                        });
+                    }
+                    await _context.SaveChangesAsync();  
+
+                    await transaction.CommitAsync();
+
+                    _permissionService.InvalidateCache(organizationUser.OrganizationUserId); 
+
+                    var branchName = request.BranchId.HasValue
+                        ? await _context.Branches.Where(b => b.BranchId == request.BranchId).Select(b => b.Name).FirstOrDefaultAsync()
+                        : null;
+
+                    return ToResponse(organizationUser, FullName(user.FirstName, user.LastName), user.Email, branchName);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+
+       
+        
 
         public async Task<OrganizationUserResponse> CreateAsync( CreateOrganizationUserRequest request)
         {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RestaurantSaaS.Domain.Entities;
+using System;
 using System.Collections.Generic;
 
 namespace RestaurantSaaS.Infrastructure;
@@ -6,12 +7,10 @@ namespace RestaurantSaaS.Infrastructure;
 public partial class Permission
 {
     public int PermissionId { get; set; }
-
     public string Code { get; set; } = null!;
-
     public string Name { get; set; } = null!;
-
     public string? Description { get; set; }
 
     public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+    public virtual ICollection<SystemRolePermission> SystemRolePermissions { get; set; } = new List<SystemRolePermission>();   // ← إضافة
 }

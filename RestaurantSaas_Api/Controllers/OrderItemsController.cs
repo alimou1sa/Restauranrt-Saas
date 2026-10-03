@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -18,6 +19,7 @@ namespace RestaurantSaas_Api.Controllers
             _orderItemService = orderItemService;
         }
 
+        [HasPermission("order.manage")]
         [HttpPost("orders/{orderId:int}", Name = "AddOrderItem")]
         public async Task<ActionResult<OrderItemResponse>> Add(int orderId,[FromBody] CreateOrderItemRequest request)
         {
@@ -39,6 +41,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("order.read")]
         [HttpGet("orders/{orderId:int}", Name = "GetOrderItemsByOrder")]
         public async Task<ActionResult<IEnumerable<OrderItemResponse>>> GetAllByOrder(int orderId)
         {
@@ -49,6 +52,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(items);
         }
 
+        [HasPermission("order.manage")]
         [HttpPut("{orderItemId:int}", Name = "UpdateOrderItem")]
         public async Task<ActionResult<OrderItemResponse>> Update(int orderItemId,[FromBody] UpdateOrderItemRequest request)
         {
@@ -62,6 +66,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(item);
         }
 
+        [HasPermission("order.manage")]
         [HttpDelete("{orderItemId:int}", Name = "RemoveOrderItem")]
         public async Task<IActionResult> Remove(int orderItemId)
         {

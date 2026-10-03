@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RestaurantSaaS.Application.Common;
@@ -14,7 +15,9 @@ using RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Auth.RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Data;
 using RestaurantSaaS.Infrastructure.PasswordHashe;
+using System.Security.Claims;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +43,20 @@ builder.Services
 
             ClockSkew = TimeSpan.Zero 
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                if (jti is not null)
+                {
+                    var blacklist = context.HttpContext.RequestServices.GetRequiredService<IAccessTokenBlacklist>();
+                    if (blacklist.IsRevoked(jti))
+                        context.Fail("This token has been revoked.");
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 
@@ -61,7 +78,8 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-
+builder.Services.AddMemoryCache();  
+builder.Services.AddSingleton<IAccessTokenBlacklist, AccessTokenBlacklist>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -73,10 +91,10 @@ builder.Services.AddScoped<ICurrentTenant, CurrentTenant >();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-
+builder.Services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
 builder.Services.AddScoped<IAppDbContext>(sp =>sp.GetRequiredService<AppDbContext>());
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-
+builder.Services.AddScoped<IRefreshTokenSettings>(sp => sp.GetRequiredService<IOptions<JwtSettings>>().Value);
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
@@ -98,7 +116,7 @@ builder.Services.AddScoped<IInventoryTransactionService, InventoryTransactionSer
 builder.Services.AddScoped<IPlanService, PlanService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddScoped<ISystemRolePermissionService, SystemRolePermissionService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
