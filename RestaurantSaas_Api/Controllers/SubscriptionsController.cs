@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -17,7 +18,7 @@ namespace RestaurantSaas_Api.Controllers
         {
             _subscriptionService = subscriptionService;
         }
-
+        [HasPermission("subscription.manage")]
         [HttpPost("subscription", Name = "CreateSubscription")]
         public async Task<ActionResult<SubscriptionResponse>> Create([FromBody] CreateSubscriptionRequest request)
         {
@@ -37,6 +38,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("subscription.read")]
         [HttpGet("subscription", Name = "GetCurrentSubscription")]
         public async Task<ActionResult<SubscriptionResponse>> GetCurrentSubscription()
         {
@@ -48,6 +50,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(subscription);
         }
 
+        [HasPermission("subscription.manage")]
         [HttpPatch("subscriptions/{subscriptionId:int}/plan", Name = "ChangeSubscriptionPlan")]
         public async Task<ActionResult<SubscriptionResponse>> ChangePlan(int subscriptionId,[FromBody] ChangeSubscriptionPlanRequest request)
         {
@@ -72,6 +75,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("subscription.manage")]
         [HttpPatch("subscriptions/{subscriptionId:int}/cancel", Name = "CancelSubscription")]
         public async Task<ActionResult<SubscriptionResponse>> Cancel(int subscriptionId,[FromBody] CancelSubscriptionRequest request)
         {

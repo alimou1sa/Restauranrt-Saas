@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -19,7 +20,7 @@ namespace RestaurantSaas_Api.Controllers
         {
             _orderService = orderService;
         }
-
+        [HasPermission("order.manage")]
         [HttpPost("branches/{branchId:int}", Name = "CreateOrder")]
         public async Task<ActionResult<OrderDetailsResponse>> Create(int branchId,[FromBody] CreateOrderRequest request)
         {
@@ -41,6 +42,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("order.read")]
         [HttpGet("{orderId:int}", Name = "GetOrderById")]
         public async Task<ActionResult<OrderDetailsResponse>> GetById(int orderId)
         {
@@ -54,7 +56,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(order);
         }
 
-
+        [HasPermission("order.read")]
         [HttpGet( Name = "GetOrdersByOrganization")]
         public async Task<ActionResult<IEnumerable<OrderListResponse>>> GetOrders()
         {
@@ -64,6 +66,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(orders);
         }
 
+        [HasPermission("order.manage")]
         [HttpPut("{orderId:int}", Name = "UpdateOrder")]
         public async Task<ActionResult<OrderDetailsResponse>> Update(int orderId,[FromBody] UpdateOrderRequest request)
         {
@@ -84,6 +87,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("order.manage")]
         [HttpPatch("orders/{orderId:int}/status", Name = "UpdateOrderStatus")]
         public async Task<ActionResult<OrderDetailsResponse>> UpdateStatus(int orderId,[FromBody] UpdateOrderStatusRequest request)
         {
@@ -104,6 +108,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("order.manage")]
         [HttpDelete("orders/{orderId:int}", Name = "DeleteOrder")]
         public async Task<IActionResult> Delete(int orderId)
         {

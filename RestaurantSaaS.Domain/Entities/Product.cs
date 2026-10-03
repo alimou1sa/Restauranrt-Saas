@@ -1,10 +1,13 @@
-﻿using System;
+﻿using RestaurantSaaS.Application.Common;
+using System;
 using System.Collections.Generic;
 
 namespace RestaurantSaaS.Infrastructure;
 
-public partial class Product
+public partial class Product: ITenantEntity
 {
+    public int OrganizationId { get; set; }
+
     public int ProductId { get; set; }
 
     public int CategoryId { get; set; }

@@ -10,7 +10,8 @@ namespace RestaurantSaaS.Application.DTOs.Auth.Response
         public class AuthTokenResponse
         {
             public string Token { get; set; } = null!;
-            public int OrganizationId { get; set; }
+        public string RefreshToken { get; set; } = null!;
+        public int OrganizationId { get; set; }
             public int OrganizationUserId { get; set; }
             public int? BranchId { get; set; }
         }

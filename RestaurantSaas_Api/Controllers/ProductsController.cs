@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantSaaS.Infrastructure;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -19,6 +20,7 @@ namespace RestaurantSaas_Api.Controllers
             _productService = productService;
         }
 
+        [HasPermission("product.manage")]
         [HttpPost("categories/{categoryId:int}", Name = "CreateProduct")]
         public async Task<ActionResult<ProductDetailsResponse>> Create(int categoryId, [FromBody] CreateProductRequest request)
         {
@@ -38,6 +40,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("product.read")]
         [HttpGet("{productId:int}", Name = "GetProductByID")]
         public async Task<ActionResult<ProductDetailsResponse>> GetById(int productId)
         {
@@ -46,7 +49,7 @@ namespace RestaurantSaas_Api.Controllers
             return product is null ? NotFound() : Ok(product);
         }
 
-
+        [HasPermission("product.read")]
         [HttpGet("branches/{branchId:int}", Name = "GetAllProduct")]
         public async Task<ActionResult<IEnumerable<ProductListResponse>>> GetAllByBranch(int branchId)
         {
@@ -54,6 +57,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(products);
         }
 
+        [HasPermission("product.manage")]
         [HttpPut("{productId:int}", Name = "UpdateProduct")]
         public async Task<ActionResult<ProductDetailsResponse>> Update(int productId, [FromBody] UpdateProductRequest request)
         {
@@ -69,6 +73,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("product.manage")]
         [HttpPatch("{productId:int}/availability", Name = "UpdateAvailabilityProduct")]
         public async Task<ActionResult<ProductDetailsResponse>> UpdateAvailability(int productId, [FromBody] UpdateProductAvailabilityRequest request)
         {
@@ -76,6 +81,7 @@ namespace RestaurantSaas_Api.Controllers
             return product is null ? NotFound() : Ok(product);
         }
 
+        [HasPermission("product.manage")]
         [HttpDelete("{productId:int}", Name = "DeleteProduct")]
         public async Task<IActionResult> Delete(int productId)
         {

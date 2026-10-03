@@ -17,7 +17,7 @@ public class CurrentUser : ICurrentUser
 
     public bool IsAuthenticated =>
         _user?.Identity?.IsAuthenticated ?? false;
-
+    /*
     public int UserId =>ParseIntClaim(JwtRegisteredClaimNames.Sub)?? throw
         new InvalidOperationException("No authenticated user in context.");
 
@@ -27,4 +27,24 @@ public class CurrentUser : ICurrentUser
 
         return int.TryParse(value, out var result)? result: null;
     }
+    */
+
+
+    public int UserId => int.TryParse(_user?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id)
+        ? id : throw new InvalidOperationException("No authenticated user in context.");
+
+    public string? Jti => _user?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+    public DateTime? ExpiresAtUtc
+    {
+        get
+        {
+            var exp = _user?.FindFirstValue(JwtRegisteredClaimNames.Exp);
+            return long.TryParse(exp, out var unixSeconds)
+                ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime
+                : null;
+        }
+    }
+
+
 }

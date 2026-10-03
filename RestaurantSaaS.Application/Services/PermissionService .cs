@@ -35,7 +35,7 @@ namespace RestaurantSaaS.Application.Services
            if (_cache.TryGetValue(cacheKey, out HashSet<string>? cached) && cached is not null)
                 return cached;
 
-            _cache.Remove(cacheKey);
+          //  _cache.Remove(cacheKey);
 
 
             var permissions = await LoadPermissionsAsync(organizationUserId);
@@ -50,31 +50,42 @@ namespace RestaurantSaaS.Application.Services
         }
 
         private async Task<HashSet<string>> LoadPermissionsAsync(int organizationUserId)
-        { 
-
-   
-
+        {
             var membershipActive = await _context.OrganizationUsers
-                             .IgnoreQueryFilters().AsNoTracking()
-             .AnyAsync(ou =>
-                 ou.OrganizationUserId == organizationUserId &&
-                 ou.IsActive &&
-                 ou.RemovedAtUtc == null);
+                //.IgnoreQueryFilters()
+                .AsNoTracking()
+                .AnyAsync(ou =>
+                    ou.OrganizationUserId == organizationUserId &&
+                    ou.IsActive &&
+                    ou.RemovedAtUtc == null);
 
             if (!membershipActive)
                 return new HashSet<string>();
 
-            var codes = await _context.UserRoles
-                .IgnoreQueryFilters().AsNoTracking()
-                .Where(ur => ur.OrganizationUserId == organizationUserId && ur.Role.IsActive)
-                .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Code))
-                .Distinct()
+   
+            var systemCodes = await _context.UserRoles
+              //  .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(ur =>
+                    ur.OrganizationUserId == organizationUserId &&
+                    ur.Role.IsActive &&
+                    ur.Role.SystemRoleId != null)
+                .SelectMany(ur => ur.Role.SystemRole.SystemRolePermissions.Select(srp => srp.Permission.Code))
                 .ToListAsync();
 
-            return codes.ToHashSet();
-        }
-    
+  
+            var customCodes = await _context.UserRoles
+              //  .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(ur =>
+                    ur.OrganizationUserId == organizationUserId &&
+                    ur.Role.IsActive &&
+                    ur.Role.SystemRoleId == null)
+                .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Code))
+                .ToListAsync();
 
+            return systemCodes.Concat(customCodes).ToHashSet();
+        }
 
 
         public async Task<PermissionResponse> CreateAsync(CreatePermissionRequest request)

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -18,7 +19,7 @@ namespace RestaurantSaas_Api.Controllers
         {
             _inventoryService = inventoryService;
         }
-
+        [HasPermission("inventory.manage")]
         [HttpPost("branches/{branchId:int}/inventories", Name = "CreateInventory")]
         public async Task<ActionResult<InventoryResponse>> Create(
             int branchId,
@@ -42,6 +43,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("inventory.read")]
         [HttpGet("inventories/{inventoryId:int}", Name = "GetInventoryById")]
         public async Task<ActionResult<InventoryResponse>> GetById(int inventoryId)
         {
@@ -55,6 +57,8 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(inventory);
         }
 
+
+        [HasPermission("inventory.read")]
         [HttpGet("branches/{branchId:int}/inventories", Name = "GetInventoriesByBranch")]
         public async Task<ActionResult<IEnumerable<InventoryResponse>>> GetAllByBranch(int branchId)
         {
@@ -65,10 +69,9 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(inventories);
         }
 
+        [HasPermission("inventory.manage")]
         [HttpPut("inventories/{inventoryId:int}/settings", Name = "UpdateInventorySettings")]
-        public async Task<ActionResult<InventoryResponse>> UpdateSettings(
-            int inventoryId,
-            [FromBody] UpdateInventorySettingsRequest request)
+        public async Task<ActionResult<InventoryResponse>> UpdateSettings(int inventoryId,[FromBody] UpdateInventorySettingsRequest request)
         {
             if (inventoryId <= 0)
                 return BadRequest(new { message = "Inventory ID must be greater than 0." });
@@ -80,6 +83,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(inventory);
         }
 
+        [HasPermission("inventory.manage")]
         [HttpDelete("inventories/{inventoryId:int}", Name = "DeleteInventory")]
         public async Task<IActionResult> Delete(int inventoryId)
         {

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Application.DTOs.Menus.MenusRequest;
 using RestaurantSaaS.Application.DTOs.Menus.MenusRespose;
 using RestaurantSaaS.Application.InterfacesService;
+using RestaurantSaaS.Infrastructure.Auth;
 
 namespace RestaurantSaas_Api.Controllers
 {
@@ -20,6 +21,8 @@ namespace RestaurantSaas_Api.Controllers
             _menuService = menuService;
         }
 
+
+        [HasPermission("menu.manage")]
         [HttpPost("branches/{branchId:int}",Name = "CreateMenu")]
         public async Task<ActionResult<MenuResponse>> Create(int branchId,[FromBody] CreateMenuRequest request)
         {
@@ -53,6 +56,8 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+
+        [HasPermission("menu.read")]
         [HttpGet("{menuId:int}",Name = "GetMenuById")]
         public async Task<ActionResult<MenuResponse>> GetById(int menuId)
         {
@@ -74,6 +79,8 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(menu);
         }
 
+
+        [HasPermission("menu.read")]
         [HttpGet("branches/{branchId:int}",Name = "GetMenusByBranch")]
         public async Task<ActionResult<IEnumerable<MenuResponse>>> GetAllByBranch(int branchId)
         {
@@ -90,6 +97,8 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(menus);
         }
 
+
+        [HasPermission("menu.manage")]
         [HttpPut("{menuId:int}",Name = "UpdateMenu")]
         public async Task<ActionResult<MenuResponse>> Update(int menuId,[FromBody] UpdateMenuRequest request)
         {
@@ -121,6 +130,8 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+
+        [HasPermission("menu.manage")]
         [HttpDelete("{menuId:int}",Name = "DeleteMenu")]
         public async Task<IActionResult> Delete(int menuId)
         {
