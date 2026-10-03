@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
 using RestaurantSaaS.Application.DTOs.Auth.Request;
 using RestaurantSaaS.Application.DTOs.Auth.Response;
+using RestaurantSaaS.Application.DTOs.RefreshTokens.RefreshTokensRequest;
 using RestaurantSaaS.Application.InterfacesService;
-using System.Security.Claims;
-
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -63,6 +63,34 @@ namespace RestaurantSaas_Api.Controllers
                 return Unauthorized(new { message = ex.Message });
             }
         }
+
+
+
+        [AllowAnonymous]  
+        [HttpPost("refresh", Name = "RefreshToken")]
+        public async Task<ActionResult<AuthTokenResponse>> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                var result = await _authService.RefreshAsync(request);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex) { return Unauthorized(new { message = ex.Message }); }
+        }
+
+     
+      //  [AllowAnonymous]
+
+        [Authorize]
+        [HttpPost("logout", Name = "Logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            await _authService.LogoutAsync(request);
+            return NoContent();
+      
+        }
+
+
 
 
     }

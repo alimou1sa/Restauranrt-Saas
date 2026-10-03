@@ -10,7 +10,8 @@ namespace RestaurantSaaS.Domain.Common
     public interface ICurrentUser
     {
         int UserId { get; }
-
+        string? Jti { get; }
         bool IsAuthenticated { get; }
+        DateTime? ExpiresAtUtc { get; }
     }
 }

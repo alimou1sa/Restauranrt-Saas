@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -19,7 +20,7 @@ namespace RestaurantSaas_Api.Controllers
         {
             _customerService = customerService;
         }
-
+        [HasPermission("customer.manage")]
         [HttpPost( Name = "CreateCustomer")]
         public async Task<ActionResult<CustomerDetailsResponse>> CreateCustomer([FromBody] CreateCustomerRequest request)
         {
@@ -34,6 +35,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("customer.read")]
         [HttpGet("{customerId:int}", Name = "GetCustomerById")]
         public async Task<ActionResult<CustomerDetailsResponse>> GetById(int customerId)
         {
@@ -41,6 +43,7 @@ namespace RestaurantSaas_Api.Controllers
             return customer is null ? NotFound() : Ok(customer);
         }
 
+        [HasPermission("customer.read")]
         [HttpGet( Name = "GetCustomers")]
         public async Task<ActionResult<IEnumerable<CustomerListResponse>>> GetCustomers()
         {
@@ -48,6 +51,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(customers);
         }
 
+        [HasPermission("customer.manage")]
         [HttpPut("{customerId:int}", Name = "UpdateCustomer")]
         public async Task<ActionResult<CustomerDetailsResponse>> Update(int customerId,[FromBody] UpdateCustomerRequest request)
         {
@@ -55,6 +59,7 @@ namespace RestaurantSaas_Api.Controllers
             return customer is null ? NotFound() : Ok(customer);
         }
 
+        [HasPermission("customer.manage")]
         [HttpDelete("{customerId:int}", Name = "DeleteCustomer")]
         public async Task<IActionResult> Delete(int customerId)
         {

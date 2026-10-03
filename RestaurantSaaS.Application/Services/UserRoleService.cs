@@ -94,8 +94,6 @@ namespace RestaurantSaaS.Application.Services
             _permissionService.InvalidateCache(organizationUserId);
 
 
-            await _context.SaveChangesAsync();
-
             return true;
         }
 

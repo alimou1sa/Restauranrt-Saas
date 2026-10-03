@@ -35,6 +35,15 @@ internal class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey(d => d.CategoryId)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Products_Categories");
+
+        entity.Property(e => e.OrganizationId).HasColumnName("OrganizationID");
+        entity.HasIndex(e => e.OrganizationId, "IX_Products_OrganizationID");
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(e => e.OrganizationId)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK_Products_Organizations");
+
+
     }
 
 }

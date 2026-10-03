@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -18,7 +19,7 @@ namespace RestaurantSaas_Api.Controllers
         {
             _categoryService = categoryService;
         }
-
+        [HasPermission("menu.manage")]
         [HttpPost("menus/{menuId:int}",Name = "CreateCategory")]
         public async Task<ActionResult<CategoryResponse>> Create(int menuId,[FromBody] CreateCategoryRequest request)
         {
@@ -52,6 +53,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("menu.read")]
         [HttpGet("{categoryId:int}",Name = "GetCategoryById")]
         public async Task<ActionResult<CategoryResponse>> GetById(int categoryId)
         {
@@ -73,6 +75,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(category);
         }
 
+        [HasPermission("menu.read")]
         [HttpGet("menus/{menuId:int}",Name = "GetCategoriesByMenu")]
         public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetAllByMenu(int menuId)
         {
@@ -89,6 +92,7 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(categories);
         }
 
+        [HasPermission("menu.manage")]
         [HttpPut("{categoryId:int}",Name = "UpdateCategory")]
         public async Task<ActionResult<CategoryResponse>> Update(int categoryId,[FromBody] UpdateCategoryRequest request)
         {
@@ -120,6 +124,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("menu.manage")]
         [HttpDelete("{categoryId:int}",Name = "DeleteCategory")]
         public async Task<IActionResult> Delete(int categoryId)
         {

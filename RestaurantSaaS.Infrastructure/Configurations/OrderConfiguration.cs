@@ -57,6 +57,18 @@ internal class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasPrincipalKey(p => new { p.BranchId, p.TableId })
             .HasForeignKey(d => new { d.BranchId, d.TableId })
             .HasConstraintName("FK_Orders_Tables");
+
+        entity.Property(e => e.OrganizationId).HasColumnName("OrganizationID");
+        entity.HasIndex(e => e.OrganizationId, "IX_Orders_OrganizationID");
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(e => e.OrganizationId)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK_Orders_Organizations");
+
+
+
+
+
     }
 
 

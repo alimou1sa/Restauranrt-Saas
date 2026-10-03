@@ -1,10 +1,13 @@
-﻿using System;
+﻿using RestaurantSaaS.Application.Common;
+using RestaurantSaaS.Domain.Common;
+using System;
 using System.Collections.Generic;
 
 namespace RestaurantSaaS.Infrastructure;
 
-public partial class Order
+public partial class Order: ITenantEntity, IBranchOwnedDirect
 {
+    public int OrganizationId { get; set; }
     public int OrderId { get; set; }
 
     public int BranchId { get; set; }

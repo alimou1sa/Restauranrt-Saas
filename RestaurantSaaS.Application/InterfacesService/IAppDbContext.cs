@@ -50,6 +50,9 @@ namespace RestaurantSaaS.Application.InterfacesService
         DbSet<OrderItem> OrderItems { get; }
 
         DbSet<SystemRole> SystemRoles { get; }
+
+        DbSet<SystemRolePermission> SystemRolePermissions { get; }
+        DbSet<RefreshToken> RefreshTokens { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
         Task<IDbContextTransaction> BeginTransactionAsync();

@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
@@ -18,10 +19,9 @@ namespace RestaurantSaas_Api.Controllers
             _paymentService = paymentService;
         }
 
+        [HasPermission("payment.manage")]
         [HttpPost("orders/{orderId:int}/payments", Name = "CreatePayment")]
-        public async Task<ActionResult<PaymentResponse>> Create(
-            int orderId,
-            [FromBody] CreatePaymentRequest request)
+        public async Task<ActionResult<PaymentResponse>> Create(int orderId,[FromBody] CreatePaymentRequest request)
         {
             if (orderId <= 0)
                 return BadRequest(new { message = "Order ID must be greater than 0." });
@@ -41,6 +41,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("payment.read")]
         [HttpGet("payments/{paymentId:int}", Name = "GetPaymentById")]
         public async Task<ActionResult<PaymentResponse>> GetById(int paymentId)
         {
@@ -54,6 +55,7 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(payment);
         }
 
+        [HasPermission("payment.read")]
         [HttpGet("orders/{orderId:int}/payments", Name = "GetPaymentsByOrder")]
         public async Task<ActionResult<IEnumerable<PaymentResponse>>> GetAllByOrder(int orderId)
         {
@@ -64,10 +66,9 @@ namespace RestaurantSaas_Api.Controllers
             return Ok(payments);
         }
 
+        [HasPermission("payment.manage")]
         [HttpPatch("payments/{paymentId:int}/status", Name = "UpdatePaymentStatus")]
-        public async Task<ActionResult<PaymentResponse>> UpdateStatus(
-            int paymentId,
-            [FromBody] UpdatePaymentStatusRequest request)
+        public async Task<ActionResult<PaymentResponse>> UpdateStatus(int paymentId,[FromBody] UpdatePaymentStatusRequest request)
         {
             if (paymentId <= 0)
                 return BadRequest(new { message = "Payment ID must be greater than 0." });

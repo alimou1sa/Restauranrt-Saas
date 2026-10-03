@@ -1,5 +1,6 @@
 ﻿using RestaurantSaaS.Application.DTOs.Auth.Request;
 using RestaurantSaaS.Application.DTOs.Auth.Response;
+using RestaurantSaaS.Application.DTOs.RefreshTokens.RefreshTokensRequest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,9 @@ namespace RestaurantSaaS.Application.InterfacesService
         Task<LoginResponse> LoginAsync(LoginRequest request);
         Task<List<OrganizationOptionResponse>> GetMyOrganizationsAsync();
         Task<AuthTokenResponse> SelectOrganizationAsync( SelectOrganizationRequest request);
+
+
+        Task<AuthTokenResponse> RefreshAsync(RefreshTokenRequest request);
+        Task LogoutAsync(LogoutRequest request);
     }
 }

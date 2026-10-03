@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantSaaS.Infrastructure.Auth;
 namespace RestaurantSaas_Api.Controllers
 {
 
@@ -19,6 +20,7 @@ namespace RestaurantSaas_Api.Controllers
             _inventoryTransactionService = inventoryTransactionService;
         }
 
+        [HasPermission("inventory.manage")]
         [HttpPost("inventories/{inventoryId:int}", Name = "CreateInventoryTransaction")]
         public async Task<ActionResult<InventoryTransactionResponse>> Create(int inventoryId,[FromBody] CreateInventoryTransactionRequest request)
         {
@@ -41,6 +43,7 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
+        [HasPermission("inventory.read")]
         [HttpGet("branches/{branchId:int}", Name = "GetInventoryTransactionsByBranch")]
         public async Task<ActionResult<IEnumerable<InventoryTransactionResponse>>> GetAllByBranch(int branchId)
         {

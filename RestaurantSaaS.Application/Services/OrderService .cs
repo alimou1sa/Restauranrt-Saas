@@ -29,10 +29,11 @@ namespace RestaurantSaaS.Application.Services
             _currentTenant = currentTenant;
         }
 
+
+
         public async Task<OrderDetailsResponse> CreateAsync(int branchId, CreateOrderRequest request)
         {
-            var branch = await _context.Branches
-                .FirstOrDefaultAsync(b => b.BranchId == branchId);
+            var branch = await _context.Branches.FirstOrDefaultAsync(b => b.BranchId == branchId);
 
             if (branch is null)
                 throw new KeyNotFoundException($"Branch {branchId} was not found.");
@@ -55,12 +56,16 @@ namespace RestaurantSaaS.Application.Services
                     throw new InvalidOperationException($"Customer {request.CustomerId} does not belong to this organization.");
             }
 
-            var orderCount = await _context.Orders.CountAsync(o => o.BranchId == branchId);
-            var orderNumber = $"ORD-{branchId}-{orderCount + 1:D5}";
+   
+
+            var orderNumber = $"ORD-{branchId}-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid().ToString("N")[..4]}";
+
 
             var order = new Order
             {
                 BranchId = branchId,
+                OrganizationId = branch.OrganizationId,
+               
                 TableId = request.TableId,
                 CustomerId = request.CustomerId,
                 OrderNumber = orderNumber,

@@ -4,6 +4,7 @@ using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.InterfacesService;
 using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
+using RestaurantSaaS.Infrastructure.Auth;
 using System.Linq.Expressions;
 
 
@@ -26,7 +27,7 @@ public partial class AppDbContext : DbContext, IAppDbContext
 
     public int? CurrentBranchId => _currentTenant.BranchId;
 
-//-----------------------------------------------------------
+    //-----------------------------------------------------------
 
     public virtual DbSet<Branch> Branches { get; set; }
 
@@ -69,7 +70,8 @@ public partial class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     public virtual DbSet<SystemRole> SystemRoles { get; set; }
-
+    public virtual DbSet<SystemRolePermission> SystemRolePermissions { get; set; }
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
     // =========================================================
     // Model Configuration
@@ -134,16 +136,19 @@ public partial class AppDbContext : DbContext, IAppDbContext
 
     private void ApplyBranchScopedFilters(ModelBuilder modelBuilder)
     {
+
         ApplyBranchScopedFilter<Menu>(modelBuilder,e => e.Branch);
 
         ApplyBranchScopedFilter<RestaurantTable>(modelBuilder,e => e.Branch);
 
         ApplyBranchScopedFilter<Inventory>(modelBuilder,e => e.Branch);
 
-        ApplyBranchScopedFilter<Order>(modelBuilder,e => e.Branch);
+
+
+        ApplyDirectBranchScopedFilter<Order>(modelBuilder,e => e.BranchId);
 
         ApplyBranchScopedFilter<Category>(modelBuilder,e => e.Menu.Branch);
-        ApplyBranchScopedFilter<Product>(modelBuilder,e => e.Category.Menu.Branch);
+     ApplyBranchScopedFilter<Product>(modelBuilder, e => e.Category.Menu.Branch);
         ApplyBranchScopedFilter<OrderItem>(modelBuilder,e => e.Order.Branch);
 
         ApplyBranchScopedFilter<Payment>(modelBuilder,e => e.Order.Branch);
@@ -193,6 +198,56 @@ public partial class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);
     }
 
+
+
+    private void ApplyDirectBranchScopedFilter<TEntity>(
+    ModelBuilder modelBuilder,
+    Expression<Func<TEntity, int>> branchIdSelector)
+    where TEntity : class
+    {
+        var parameter = branchIdSelector.Parameters[0];
+
+        var branchIdProperty = branchIdSelector.Body;
+
+        var contextExpression =
+            Expression.Constant(this);
+
+        var currentBranchId =
+            Expression.Property(
+                contextExpression,
+                nameof(CurrentBranchId));
+
+        var branchHasValue =
+            Expression.Property(
+                currentBranchId,
+                nameof(Nullable<int>.HasValue));
+
+        var branchNotRestricted =
+            Expression.Not(branchHasValue);
+
+        var branchValue =
+            Expression.Property(
+                currentBranchId,
+                nameof(Nullable<int>.Value));
+
+        var branchMatches =
+            Expression.Equal(
+                branchIdProperty,
+                branchValue);
+
+        var branchCheck =
+            Expression.OrElse(
+                branchNotRestricted,
+                branchMatches);
+
+        var lambda =
+            Expression.Lambda<Func<TEntity, bool>>(
+                branchCheck,
+                parameter);
+
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(lambda);
+    }
 
     // =========================================================
     // Transaction

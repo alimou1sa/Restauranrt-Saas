@@ -21,5 +21,7 @@ namespace RestaurantSaaS.Application.InterfacesService
         Task<OrganizationUserResponse?> UpdateAsync(int organizationUserId, UpdateOrganizationUserRequest request);
 
         Task<bool> DeleteAsync(int organizationUserId);
+
+        Task<OrganizationUserResponse> AddMemberWithRolesAsync(AddMemberWithRolesRequest request);
     }
 }

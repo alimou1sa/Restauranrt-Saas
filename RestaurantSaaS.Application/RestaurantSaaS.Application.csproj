@@ -27,4 +27,8 @@
     <ProjectReference Include="..\RestaurantSaaS.Domain\RestaurantSaaS.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\RefreshTokens\RefreshTokensResponse\" />
+  </ItemGroup>
+
 </Project>

@@ -1,15 +1,16 @@
-﻿using System;
+﻿    using global::RestaurantSaaS.Application.DTOs.Products.ProductsRequest;
+using RestaurantSaaS.Application.Common;
+using RestaurantSaaS.Application.DTOs.Products.ProductsResponse;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Products.ProductsRequest;
-using RestaurantSaaS.Application.DTOs.Products.ProductsResponse;
 namespace RestaurantSaaS.Application.InterfacesService
 {
 
 
-    public interface IProductService
+    public interface IProductService 
     {
 
         Task<ProductDetailsResponse> CreateAsync(int categoryId, CreateProductRequest request);

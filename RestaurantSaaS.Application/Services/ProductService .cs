@@ -26,10 +26,14 @@ namespace RestaurantSaaS.Application.Services
         {
 
             var category = await _context.Categories
-                .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+    .Include(c => c.Menu)
+        .ThenInclude(m => m.Branch)
+    .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
 
             if (category is null)
-                throw new KeyNotFoundException($"Category {categoryId} was not found.");
+                throw new KeyNotFoundException(
+                    $"Category {categoryId} was not found.");
+
 
             var nameExists = await _context.Products
                 .AnyAsync(p => p.CategoryId == categoryId && p.Name == request.Name);
