@@ -24,7 +24,7 @@ namespace RestaurantSaas_Api.Controllers
             _authService = authService;
         }
 
-
+        [Authorize(Policy = "PlatformAdmin")]
         [HttpPost("{organizationId:int}/impersonate")]
         public async Task<ActionResult<ImpersonationResponse>> Impersonate(int organizationId)
         {

@@ -59,7 +59,7 @@ builder.Services
 
 
 
-builder.Services.AddMemoryCache();
+
 
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
@@ -70,11 +70,15 @@ builder.Services.AddAuthorization(options =>
 {
 
     options.AddPolicy("AuthenticatedAny", p => p.RequireAuthenticatedUser());
-    options.AddPolicy("PlatformAdmin", policy =>   
+
+
+    options.AddPolicy("PlatformAdmin", policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireClaim(AppClaimTypes.IsPlatformAdmin, "true");
+        policy.RequireClaim(AppClaimTypes.TokenType, TokenTypes.PlatformAdmin);
     });
+
 
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()

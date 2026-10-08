@@ -81,7 +81,8 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<bool> RemoveAsync(int userRoleId)
         {
-            var userRole = await _context.UserRoles.FindAsync(userRoleId);
+            var userRole = await _context.UserRoles
+      .FirstOrDefaultAsync(ur => ur.UserRoleId == userRoleId);
             if (userRole is null)
                 return false;
           

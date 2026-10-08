@@ -88,7 +88,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("order.manage")]
-        [HttpPatch("orders/{orderId:int}/status", Name = "UpdateOrderStatus")]
+        [HttpPatch("{orderId:int}/status", Name = "UpdateOrderStatus")]
         public async Task<ActionResult<OrderDetailsResponse>> UpdateStatus(int orderId,[FromBody] UpdateOrderStatusRequest request)
         {
             if (orderId <= 0)
@@ -109,7 +109,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("order.manage")]
-        [HttpDelete("orders/{orderId:int}", Name = "DeleteOrder")]
+        [HttpDelete("{orderId:int}", Name = "DeleteOrder")]
         public async Task<IActionResult> Delete(int orderId)
         {
             if (orderId <= 0)

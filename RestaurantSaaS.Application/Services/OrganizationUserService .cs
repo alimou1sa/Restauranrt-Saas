@@ -168,7 +168,9 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<OrganizationUserResponse?> UpdateAsync(int organizationUserId, UpdateOrganizationUserRequest request)
         {
-            var organizationUser = await _context.OrganizationUsers.FindAsync(organizationUserId);
+            var organizationUser = await _context.OrganizationUsers
+       .FirstOrDefaultAsync(ou => ou.OrganizationUserId == organizationUserId);
+
             if (organizationUser is null)
                 return null;
 
@@ -185,13 +187,15 @@ namespace RestaurantSaaS.Application.Services
             organizationUser.IsActive = request.IsActive;
 
             await _context.SaveChangesAsync();
-
+            _permissionService.InvalidateCache(organizationUser.OrganizationUserId);
             return await GetByIdAsync(organizationUserId);
         }
 
         public async Task<bool> DeleteAsync(int organizationUserId)
         {
-            var organizationUser = await _context.OrganizationUsers.FindAsync(organizationUserId);
+            var organizationUser = await _context.OrganizationUsers
+                .FirstOrDefaultAsync(ou => ou.OrganizationUserId == organizationUserId);
+
             if (organizationUser is null)
                 return false;
 
@@ -199,6 +203,8 @@ namespace RestaurantSaaS.Application.Services
             organizationUser.RemovedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            _permissionService.InvalidateCache(organizationUser.OrganizationUserId);
 
             return true;
         }

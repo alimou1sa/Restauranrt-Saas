@@ -14,11 +14,11 @@ namespace RestaurantSaaS.Application.InterfacesService
     {
         Task<UserResponse> CreateAsync(CreateUserRequest request);
 
-        Task<UserResponse?> GetByIdAsync(int id);
+        Task<UserResponse?> GetMyProfileAsync();
 
         Task<List<UserResponse>> GetAllAsync();
 
-        Task<UserResponse?> UpdateAsync(int id,UpdateUserRequest request);
+        Task<UserResponse?> UpdateMyProfileAsync(UpdateUserRequest request);
 
         Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
 
