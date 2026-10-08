@@ -11,7 +11,7 @@ namespace RestaurantSaas_Api.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api")]
+    [Route("api/Tables")]
     public class RestaurantTablesController : ControllerBase
     {
         private readonly IRestaurantTableService _restaurantTableService;
@@ -22,7 +22,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("table.manage")]
-        [HttpPost("api/branches/{branchId:int}/tables" , Name = "CreateRestaurantTable")]
+        [HttpPost("branches/{branchId:int}/tables" , Name = "CreateRestaurantTable")]
         public async Task<ActionResult<RestaurantTableResponse>> Create(int branchId, [FromBody] CreateRestaurantTableRequest request)
         {
             if (branchId < 1) return BadRequest($"Not accepted ID {branchId}");
@@ -42,7 +42,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("table.read")]
-        [HttpGet("api/tables/{tableId:int}", Name = "GetRestaurantTableByid")]
+        [HttpGet("{tableId:int}", Name = "GetRestaurantTableByid")]
         public async Task<ActionResult<RestaurantTableResponse>> GetById(int tableId)
         {
             if (tableId < 1) return BadRequest($"Not accepted ID {tableId}");
@@ -52,7 +52,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("table.read")]
-        [HttpGet("api/branches/{branchId:int}/tables", Name = "GetAllRestaurantTable")]
+        [HttpGet("branches/{branchId:int}/tables", Name = "GetAllRestaurantTable")]
         public async Task<ActionResult<IEnumerable<RestaurantTableResponse>>> GetAllByBranch(int branchId)
         {
             var tables = await _restaurantTableService.GetAllByBranchAsync(branchId);
@@ -60,7 +60,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("table.manage")]
-        [HttpPut("api/tables/{tableId:int}", Name = "UpdateRestaurantTable")]
+        [HttpPut("{tableId:int}", Name = "UpdateRestaurantTable")]
         public async Task<ActionResult<RestaurantTableResponse>> Update(int tableId, [FromBody] UpdateRestaurantTableRequest request)
         {
             if (tableId < 1) return BadRequest($"Not accepted ID {tableId}");
@@ -76,7 +76,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("table.manage")]
-        [HttpDelete("api/tables/{tableId:int}", Name = "DeleteRestaurantTable")]
+        [HttpDelete("{tableId:int}", Name = "DeleteRestaurantTable")]
         public async Task<IActionResult> Delete(int tableId)
         {
             if (tableId < 1) return BadRequest($"Not accepted ID {tableId}");

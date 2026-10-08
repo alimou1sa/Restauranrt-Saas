@@ -46,7 +46,8 @@ namespace RestaurantSaaS.Application.Services
                 Phone = request.Phone,
                 IsActive = true,
                 EmailConfirmed = false,
-                CreatedAtUtc = DateTime.UtcNow
+                CreatedAtUtc = DateTime.UtcNow,
+                IsPlatformAdmin = false
             };
 
             _context.Users.Add(user);
@@ -54,17 +55,49 @@ namespace RestaurantSaaS.Application.Services
 
             return ToResponse(user);
         }
-    
-        public async Task<UserResponse?> GetByIdAsync(int userId)
+
+
+
+
+
+
+
+        public async Task<UserResponse?> GetMyProfileAsync()
         {
+            var userId = _currentUser.UserId;
 
-            if (userId != _currentUser.UserId)
-                throw new UnauthorizedAccessException("Cannot access another user's profile.");
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == userId);
 
-            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
             return user is null ? null : ToResponse(user);
-
         }
+
+        public async Task<UserResponse?> UpdateMyProfileAsync(UpdateUserRequest request)
+        {
+            var userId = _currentUser.UserId;
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user is null)
+                return null;
+
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Phone = request.Phone;
+            user.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return ToResponse(user);
+        }
+
+
+
+
+
+
         public async Task<UserResponse?> GetByEmailAsync(string Email)
         {
             var user = await _context.Users
@@ -83,21 +116,6 @@ namespace RestaurantSaaS.Application.Services
             return users.Select(ToResponse).ToList();
         }
 
-        public async Task<UserResponse?> UpdateAsync(int userId, UpdateUserRequest request)
-        {
-            if (userId != _currentUser.UserId)
-                throw new UnauthorizedAccessException("Cannot update another user's profile.");
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user is null) return null;
-
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.Phone = request.Phone;
-            user.UpdatedAtUtc = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return ToResponse(user);
-        }
 
         public async Task<bool> ChangePasswordAsync( ChangePasswordRequest request)
         {

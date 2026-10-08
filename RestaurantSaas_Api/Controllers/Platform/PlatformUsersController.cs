@@ -7,7 +7,7 @@ using RestaurantSaaS.Application.InterfacesService;
 
 namespace RestaurantSaas_Api.Controllers.Platform
 {
-    // Controllers/Platform/PlatformUsersController.cs
+ 
     [Authorize(Policy = "PlatformAdmin")]
     [ApiController]
     [Route("api/platform/users")]

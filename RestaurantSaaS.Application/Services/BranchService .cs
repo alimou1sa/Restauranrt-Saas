@@ -11,10 +11,12 @@ namespace RestaurantSaaS.Application.Services
     {
         private readonly IAppDbContext _context;
         private readonly ICurrentTenant _currentTenant;
+
         public BranchService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
             _currentTenant = currentTenant;
+     
         }
 
         public async Task<BranchResponse> CreateAsync( CreateBranchRequest request)
@@ -47,9 +49,11 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<BranchResponse?> GetByIdAsync(int branchId)
         {
-            var branch = await _context.Branches
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.BranchId == branchId);
+
+
+              var branch = await _context.Branches
+                  .AsNoTracking()
+                  .FirstOrDefaultAsync(b => b.BranchId == branchId);
 
             return branch is null ? null : ToResponse(branch);
         }
@@ -67,18 +71,26 @@ namespace RestaurantSaaS.Application.Services
             return  branches.Select(ToResponse).ToList();
         }
 
-        public async Task<BranchResponse?> UpdateAsync(int branchId, UpdateBranchRequest request)
+    
+        public async Task<BranchResponse?> UpdateAsync(
+    int branchId,
+    UpdateBranchRequest request)
         {
-            var branch = await _context.Branches.FindAsync(branchId);
+            var branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.BranchId == branchId);
+
             if (branch is null)
                 return null;
 
             var nameExists = await _context.Branches
-                .AnyAsync(b => b.OrganizationId == branch.OrganizationId && b.Name == request.Name
-                             && b.BranchId != branchId);
+                .AnyAsync(b =>
+                    b.OrganizationId == branch.OrganizationId &&
+                    b.Name == request.Name &&
+                    b.BranchId != branchId);
 
             if (nameExists)
-                throw new InvalidOperationException($"A branch named '{request.Name}' already exists in this organization.");
+                throw new InvalidOperationException(
+                    $"A branch named '{request.Name}' already exists in this organization.");
 
             branch.Name = request.Name;
             branch.Address = request.Address;
@@ -93,7 +105,9 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<bool> DeleteAsync(int branchId)
         {
-            var branch = await _context.Branches.FindAsync(branchId);
+            var branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.BranchId == branchId);
+
             if (branch is null)
                 return false;
 
