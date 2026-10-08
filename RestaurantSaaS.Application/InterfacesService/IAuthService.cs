@@ -19,5 +19,7 @@ namespace RestaurantSaaS.Application.InterfacesService
 
         Task<AuthTokenResponse> RefreshAsync(RefreshTokenRequest request);
         Task LogoutAsync(LogoutRequest request);
+        Task<MeResponse> GetMeAsync();
+        Task<ImpersonationResponse> ImpersonateOrganizationAsync(int organizationId);
     }
 }

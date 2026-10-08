@@ -35,11 +35,9 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            IssuerSigningKey = new SymmetricSecurityKey( Encoding.UTF8.GetBytes(jwtSettings.Key)),
 
             ClockSkew = TimeSpan.Zero 
         };
@@ -66,11 +64,17 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+
+
 builder.Services.AddAuthorization(options =>
 {
 
     options.AddPolicy("AuthenticatedAny", p => p.RequireAuthenticatedUser());
-
+    options.AddPolicy("PlatformAdmin", policy =>   
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(AppClaimTypes.IsPlatformAdmin, "true");
+    });
 
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
@@ -117,6 +121,12 @@ builder.Services.AddScoped<IPlanService, PlanService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISystemRolePermissionService, SystemRolePermissionService>();
+
+
+builder.Services.AddScoped<IPlatformOrganizationService, PlatformOrganizationService>();
+builder.Services.AddScoped<IPlatformUserService, PlatformUserService>();
+builder.Services.AddScoped<IPlatformSubscriptionService, PlatformSubscriptionService>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

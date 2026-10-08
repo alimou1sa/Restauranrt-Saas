@@ -57,11 +57,13 @@ namespace RestaurantSaaS.Application.Services
     
         public async Task<UserResponse?> GetByIdAsync(int userId)
         {
-            var user = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserId == userId);
 
+            if (userId != _currentUser.UserId)
+                throw new UnauthorizedAccessException("Cannot access another user's profile.");
+
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
             return user is null ? null : ToResponse(user);
+
         }
         public async Task<UserResponse?> GetByEmailAsync(string Email)
         {
@@ -83,18 +85,17 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<UserResponse?> UpdateAsync(int userId, UpdateUserRequest request)
         {
-            var user = await _context.Users.FindAsync(userId);
+            if (userId != _currentUser.UserId)
+                throw new UnauthorizedAccessException("Cannot update another user's profile.");
 
-            if (user is null)
-                return null;
+            var user = await _context.Users.FindAsync(userId);
+            if (user is null) return null;
 
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
             user.Phone = request.Phone;
             user.UpdatedAtUtc = DateTime.UtcNow;
-
             await _context.SaveChangesAsync();
-
             return ToResponse(user);
         }
 
