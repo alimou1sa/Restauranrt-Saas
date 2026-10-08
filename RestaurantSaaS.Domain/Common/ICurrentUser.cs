@@ -13,5 +13,7 @@ namespace RestaurantSaaS.Domain.Common
         string? Jti { get; }
         bool IsAuthenticated { get; }
         DateTime? ExpiresAtUtc { get; }
+
+        bool IsPlatformAdmin { get; }
     }
 }

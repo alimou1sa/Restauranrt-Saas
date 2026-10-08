@@ -26,5 +26,6 @@ internal class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.PasswordHash).HasMaxLength(500);
         entity.Property(e => e.Phone).HasMaxLength(30);
         entity.Property(e => e.UpdatedAtUtc).HasPrecision(3);
+        entity.Property(e => e.IsPlatformAdmin).HasDefaultValue(false);
     }
 }

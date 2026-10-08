@@ -18,9 +18,9 @@ namespace RestaurantSaaS.API.Controllers
         {
             _organizationService = organizationService;
         }
-  
 
-        [HttpPost("current",Name = "CreateOrganization")]
+        [Authorize(Policy = "PlatformAdmin")]
+        [HttpPost(Name = "CreateOrganization")]
         public async Task<ActionResult<OrganizationResponse>> Create([FromBody] CreateOrganizationRequest request)
         {
             try
@@ -47,6 +47,7 @@ namespace RestaurantSaaS.API.Controllers
             return organization is null ? NotFound() : Ok(organization);
         }
 
+        [Authorize(Policy = "PlatformAdmin")]
         [HttpGet(Name = "GetOrganizations")]
         public async Task<ActionResult<IEnumerable<OrganizationResponse>>> GetAll()
         {
@@ -63,6 +64,7 @@ namespace RestaurantSaaS.API.Controllers
             return organization is null ? NotFound() : Ok(organization);
         }
 
+        [Authorize(Policy = "PlatformAdmin")]
         [HttpDelete("current", Name = "DeleteOrganization")]
         public async Task<IActionResult> Delete()
         {

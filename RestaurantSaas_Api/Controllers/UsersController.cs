@@ -19,6 +19,7 @@ namespace RestaurantSaas_Api.Controllers
             _userService = userService;
         }
 
+  
         [HttpPost(Name = "CreateUser")]
         public async Task<ActionResult<UserResponse>> Create([FromBody] CreateUserRequest request)
         {

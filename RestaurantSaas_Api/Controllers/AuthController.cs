@@ -25,6 +25,22 @@ namespace RestaurantSaas_Api.Controllers
         }
 
 
+        [HttpPost("{organizationId:int}/impersonate")]
+        public async Task<ActionResult<ImpersonationResponse>> Impersonate(int organizationId)
+        {
+            try { return Ok(await _authService.ImpersonateOrganizationAsync(organizationId)); }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        }
+
+
+        [Authorize(Policy = "AuthenticatedAny")]   
+        [HttpGet("me", Name = "GetMe")]
+        public async Task<ActionResult<MeResponse>> GetMe()
+        {
+            try { return Ok(await _authService.GetMeAsync()); }
+            catch (UnauthorizedAccessException ex) { return Unauthorized(new { message = ex.Message }); }
+        }
+
 
         [HttpPost("login", Name = "Login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)

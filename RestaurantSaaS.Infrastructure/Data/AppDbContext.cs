@@ -98,6 +98,9 @@ public partial class AppDbContext : DbContext, IAppDbContext
         {
             var clrType = entityType.ClrType;
 
+            if (typeof(IBranchOwnedDirect).IsAssignableFrom(clrType))
+                continue;  
+
             if (typeof(ITenantEntity).IsAssignableFrom(clrType))
             {
                 modelBuilder.Entity(clrType).HasQueryFilter(BuildTenantFilter(clrType));
@@ -144,11 +147,13 @@ public partial class AppDbContext : DbContext, IAppDbContext
         ApplyBranchScopedFilter<Inventory>(modelBuilder,e => e.Branch);
 
 
+        ApplyDirectTenantAndBranchFilter<Order>(modelBuilder);
 
-        ApplyDirectBranchScopedFilter<Order>(modelBuilder,e => e.BranchId);
 
         ApplyBranchScopedFilter<Category>(modelBuilder,e => e.Menu.Branch);
-     ApplyBranchScopedFilter<Product>(modelBuilder, e => e.Category.Menu.Branch);
+
+        ApplyBranchScopedFilter<Product>(modelBuilder, e => e.Category.Menu.Branch);
+
         ApplyBranchScopedFilter<OrderItem>(modelBuilder,e => e.Order.Branch);
 
         ApplyBranchScopedFilter<Payment>(modelBuilder,e => e.Order.Branch);
@@ -156,6 +161,33 @@ public partial class AppDbContext : DbContext, IAppDbContext
         ApplyBranchScopedFilter<InventoryTransaction>(modelBuilder,e => e.Inventory.Branch);
     }
 
+
+    private void ApplyDirectTenantAndBranchFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity, IBranchOwnedDirect
+    {
+        var parameter = Expression.Parameter(typeof(TEntity), "e");
+        var contextExpression = Expression.Constant(this);
+
+     
+        var orgProp = Expression.Property(parameter, nameof(ITenantEntity.OrganizationId));
+        var currentOrgId = Expression.Property(contextExpression, nameof(CurrentOrganizationId));
+        var orgHasValue = Expression.Property(currentOrgId, nameof(Nullable<int>.HasValue));
+        var orgValue = Expression.Property(currentOrgId, nameof(Nullable<int>.Value));
+        var tenantCheck = Expression.AndAlso(orgHasValue, Expression.Equal(orgProp, orgValue));
+
+       
+        var branchProp = Expression.Property(parameter, nameof(IBranchOwnedDirect.BranchId));
+        var currentBranchId = Expression.Property(contextExpression, nameof(CurrentBranchId));
+        var branchHasValue = Expression.Property(currentBranchId, nameof(Nullable<int>.HasValue));
+        var branchNotRestricted = Expression.Not(branchHasValue);
+        var branchValue = Expression.Property(currentBranchId, nameof(Nullable<int>.Value));
+        var branchCheck = Expression.OrElse(branchNotRestricted, Expression.Equal(branchProp, branchValue));
+
+        var body = Expression.AndAlso(tenantCheck, branchCheck);
+        var lambda = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+
+        modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);   
+    }
 
     private void ApplyBranchScopedFilter<TEntity>(ModelBuilder modelBuilder,Expression<Func<TEntity, Branch>> branchSelector)where TEntity : class
     {

@@ -17,18 +17,9 @@ public class CurrentUser : ICurrentUser
 
     public bool IsAuthenticated =>
         _user?.Identity?.IsAuthenticated ?? false;
-    /*
-    public int UserId =>ParseIntClaim(JwtRegisteredClaimNames.Sub)?? throw
-        new InvalidOperationException("No authenticated user in context.");
 
-    private int? ParseIntClaim(string claimType)
-    {
-        var value = _user?.FindFirstValue(claimType);
-
-        return int.TryParse(value, out var result)? result: null;
-    }
-    */
-
+    public bool IsPlatformAdmin =>
+    _user?.FindFirstValue(AppClaimTypes.IsPlatformAdmin) == "true";
 
     public int UserId => int.TryParse(_user?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id)
         ? id : throw new InvalidOperationException("No authenticated user in context.");

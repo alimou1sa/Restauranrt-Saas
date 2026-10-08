@@ -149,6 +149,7 @@ namespace RestaurantSaaS.Application.Services
                 orderItem.Quantity = request.Quantity;
                 orderItem.DiscountAmount = request.DiscountAmount;
 
+                await _context.SaveChangesAsync();
                 var order = await _context.Orders
                     .FirstOrDefaultAsync(o => o.OrderId == orderItem.OrderId);
 

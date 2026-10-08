@@ -21,17 +21,25 @@ namespace RestaurantSaaS.Infrastructure.Auth
                 _currentTenant = currentTenant;
                 _permissionService = permissionService;
             }
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+        {
 
-            protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+            if (_currentUser.IsPlatformAdmin && _currentTenant.OrganizationId.HasValue)
             {
-                if (!_currentTenant.OrganizationUserId.HasValue)
-                    return; 
-
-                var permissions = await _permissionService.GetPermissionsAsync(_currentTenant.OrganizationUserId.Value);
-
-                if (permissions.Contains(requirement.PermissionCode))
-                    context.Succeed(requirement);
+                context.Succeed(requirement);
+                return;
             }
+
+            if (!_currentTenant.OrganizationUserId.HasValue)
+                return;
+
+            var permissions = await _permissionService.GetPermissionsAsync(_currentTenant.OrganizationUserId.Value);
+
+            if (permissions.Contains(requirement.PermissionCode))
+                context.Succeed(requirement);
+        }
+    
+
         }
     
 }
