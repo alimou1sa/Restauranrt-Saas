@@ -71,8 +71,6 @@ namespace RestaurantSaas_Api.Controllers
         [HttpGet( Name = "GetOrganizationUsers")]
         public async Task<ActionResult<IEnumerable<OrganizationUserResponse>>> GetOrganizationUsers()
         {
-
-
             var organizationUsers = await _organizationUserService.GetAllAsync();
             return Ok(organizationUsers);
         }

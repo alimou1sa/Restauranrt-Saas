@@ -22,7 +22,6 @@ public class UserResponse
 
     public bool EmailConfirmed { get; set; }
 
-    public bool IsPlatformAdmin { get; set; }
     public DateTime? LastLoginAtUtc { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }

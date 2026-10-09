@@ -63,7 +63,8 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<RoleResponse> AddSystemRoleAsync( int systemRoleId)
         {
-            var organizationId = _currentTenant.OrganizationId ?? throw new UnauthorizedAccessException("No organization context.");
+            var organizationId = _currentTenant.OrganizationId ?? 
+                throw new UnauthorizedAccessException("No organization context.");
 
             var organizationExists = await _context.Organizations
                 .AnyAsync(o => o.OrganizationId == organizationId);
@@ -89,12 +90,9 @@ namespace RestaurantSaaS.Application.Services
             var role = new Role
             {
                 OrganizationId = organizationId,
-
-                Name = systemRole.Name,
-                Description = systemRole.Description,
-
+                Name = null,
+                Description = null,
                 SystemRoleId = systemRole.SystemRoleId,
-
                 IsActive = true,
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -104,8 +102,7 @@ namespace RestaurantSaaS.Application.Services
             await _context.SaveChangesAsync();
 
             return await GetByIdAsync(role.RoleId)
-                ?? throw new InvalidOperationException(
-                    "Failed to retrieve the created role.");
+                ?? throw new InvalidOperationException("Failed to retrieve the created role.");
         }
 
         public async Task<RoleResponse?> GetByIdAsync(int roleId)
@@ -118,12 +115,10 @@ namespace RestaurantSaaS.Application.Services
     {
         RoleId = r.RoleId,
         OrganizationId = r.OrganizationId,
-        Name = r.Name!,
-        Description = r.Description,
+        Name = r.Name!=null?r.Name :null ,
+        Description = r.Description!=null?r.Description:null,
         SystemRoleId = r.SystemRoleId,
-        SystemRoleName = r.SystemRole != null
-            ? r.SystemRole.Name
-            : null,
+        SystemRoleName = r.SystemRole != null? r.SystemRole.Name: null,
         IsActive = r.IsActive,
         CreatedAtUtc = r.CreatedAtUtc
     })
@@ -142,8 +137,8 @@ namespace RestaurantSaaS.Application.Services
                 {
                     RoleId = r.RoleId,
                     OrganizationId = r.OrganizationId,
-                    Name = r.Name!,
-                    Description = r.Description,
+                    Name = r.Name != null ? r.Name : null,
+                    Description = r.Description != null ? r.Description : null,
                     SystemRoleId = r.SystemRoleId,
                     SystemRoleName = r.SystemRole != null
                         ? r.SystemRole.Name: null,

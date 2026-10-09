@@ -10,7 +10,7 @@ public class RoleResponse
 {
     public int RoleId { get; set; }
     public int OrganizationId { get; set; }
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; } 
     public string? Description { get; set; }
     public int? SystemRoleId { get; set; }
     public string? SystemRoleName { get; set; }
