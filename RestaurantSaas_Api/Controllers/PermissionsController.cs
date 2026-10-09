@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace RestaurantSaas_Api.Controllers
 {
     [Authorize(Policy = "PlatformAdmin")]
-    [Authorize]    
+   
     [ApiController]
     [Route("api/permissions")]
     public class PermissionsController : ControllerBase

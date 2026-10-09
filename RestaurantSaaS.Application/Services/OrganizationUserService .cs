@@ -216,6 +216,7 @@ namespace RestaurantSaaS.Application.Services
                 .Select(ou => new OrganizationUserResponse
                 {
                     OrganizationUserId = ou.OrganizationUserId,
+                    OrganizationId=ou.OrganizationId,
                     UserId = ou.UserId,
                     UserFullName = ou.User.LastName == null ? ou.User.FirstName : ou.User.FirstName + " " + ou.User.LastName,
                     UserEmail = ou.User.Email,

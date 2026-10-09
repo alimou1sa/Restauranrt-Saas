@@ -46,8 +46,9 @@ namespace RestaurantSaaS.Application.Services
                 Phone = request.Phone,
                 IsActive = true,
                 EmailConfirmed = false,
-                CreatedAtUtc = DateTime.UtcNow,
-                IsPlatformAdmin = false
+                IsPlatformAdmin = false,
+                CreatedAtUtc = DateTime.UtcNow
+             
             };
 
             _context.Users.Add(user);
@@ -55,12 +56,6 @@ namespace RestaurantSaaS.Application.Services
 
             return ToResponse(user);
         }
-
-
-
-
-
-
 
         public async Task<UserResponse?> GetMyProfileAsync()
         {
@@ -157,6 +152,7 @@ namespace RestaurantSaaS.Application.Services
                 Phone = user.Phone,
                 IsActive = user.IsActive,
                 EmailConfirmed = user.EmailConfirmed,
+        
                 LastLoginAtUtc = user.LastLoginAtUtc,
                 CreatedAtUtc = user.CreatedAtUtc,
                 UpdatedAtUtc = user.UpdatedAtUtc

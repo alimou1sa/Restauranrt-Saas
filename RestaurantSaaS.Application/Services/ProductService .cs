@@ -31,8 +31,7 @@ namespace RestaurantSaaS.Application.Services
     .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
 
             if (category is null)
-                throw new KeyNotFoundException(
-                    $"Category {categoryId} was not found.");
+                throw new KeyNotFoundException($"Category {categoryId} was not found.");
 
 
             var nameExists = await _context.Products
@@ -43,6 +42,7 @@ namespace RestaurantSaaS.Application.Services
 
             var product = new Product
             {
+                OrganizationId = category.Menu.Branch.OrganizationId,
                 CategoryId = categoryId,
                 Name = request.Name,
                 Description = request.Description,
@@ -172,6 +172,7 @@ namespace RestaurantSaaS.Application.Services
         {
             return new ProductDetailsResponse
             {
+ 
                 ProductId = product.ProductId,
                 Name = product.Name,
                 Description = product.Description,

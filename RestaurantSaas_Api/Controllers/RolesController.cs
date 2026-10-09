@@ -54,7 +54,7 @@ namespace RestaurantSaas_Api.Controllers
                     return BadRequest(new { message = "System Role ID must be greater than 0." });
                 var role = await _roleService.AddSystemRoleAsync(systemRoleId);
 
-                return CreatedAtRoute("GetRoleByOrganiGetByIdzation", new { roleId = role.RoleId },role);
+                return CreatedAtRoute("GetRoleByroleId", new { roleId = role.RoleId },role);
             }
             catch (KeyNotFoundException ex)
             {

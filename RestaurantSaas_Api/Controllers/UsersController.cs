@@ -40,37 +40,6 @@ namespace RestaurantSaas_Api.Controllers
                   }
               }
 
-        //   return CreatedAtRoute("GetUserById",new { userId = user.UserId },user);
-        /*   [HttpGet("{userId:int}", Name = "GetUserById")]
-           public async Task<ActionResult<UserResponse>> GetById(int userId)
-           {
-               if (userId <= 0)
-               {
-                   return BadRequest(new
-                   {
-                       message = "User ID must be greater than 0."
-                   });
-               }
-
-               var user = await _userService.GetByIdAsync(userId);
-
-               return user is null
-                   ? NotFound(new
-                   {
-                       message = "User not found."
-                   })
-                   : Ok(user);
-           }
-
-
-           [HttpGet(Name = "GetAllUsers")]
-           public async Task<ActionResult<IEnumerable<UserResponse>>> GetAll()
-           {
-               var users = await _userService.GetAllAsync();
-
-               return Ok(users);
-           }
-           */
 
 
 
@@ -84,8 +53,8 @@ namespace RestaurantSaas_Api.Controllers
                 : Ok(user);
         }
 
-        [HttpPut("{userId:int}", Name = "UpdateUser")]
-        public async Task<ActionResult<UserResponse>> Update([FromBody] UpdateUserRequest request)
+        [HttpPut( Name = "UpdateUser")]
+        public async Task<ActionResult<UserResponse>> UpdateMe([FromBody] UpdateUserRequest request)
         {
     
 
@@ -133,36 +102,5 @@ namespace RestaurantSaas_Api.Controllers
             }
         }
 
- /*
-        [HttpDelete("{userId:int}", Name = "DeleteUser")]
-        public async Task<IActionResult> Delete(int userId)
-        {
-            if (userId <= 0)
-            {
-                return BadRequest(new
-                {
-                    message = "User ID must be greater than 0."
-                });
-            }
-
-            try
-            {
-                var deleted = await _userService.DeleteAsync(userId);
-
-                return deleted
-                    ? NoContent()
-                    : NotFound(new
-                    {
-                        message = "User not found."
-                    });
-            }
-            catch (DbUpdateException)
-            {
-                return Conflict(new
-                {
-                    message = "This user cannot be deleted because related data still exists."
-                });
-            }
-        }*/
     }
 }
