@@ -2,6 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { PlatformAdminLayout } from '../layouts/PlatformAdminLayout';
 import { DashboardPage } from '../pages/DashboardPage';
+import { BranchesPage } from '../pages/BranchesPage';
+import { OrdersPage } from '../pages/OrdersPage';
+import { ProductsPage } from '../pages/ProductsPage';
+import { InventoryPage } from '../pages/InventoryPage';
 import { LoginPage } from '../pages/LoginPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { OrganizationMembersPage } from '../pages/OrganizationMembersPage';
@@ -32,6 +36,10 @@ export function AppRoutes() {
     <Route element={<RequireAuth />}>
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/branches" element={<BranchesPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/organization" element={<OrganizationSettingsPage />} />
         <Route path="/members" element={<OrganizationMembersPage />} />
         <Route path="*" element={<NotFoundPage />} />
