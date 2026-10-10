@@ -25,9 +25,9 @@ namespace RestaurantSaaS.Application.Services
                 _permissionService = permissionService;
             }
 
-    
 
-            public async Task<UserRoleResponse> AssignAsync(int organizationUserId, AssignRoleRequest request)
+
+        public async Task<UserRoleResponse> AssignAsync(int organizationUserId, AssignRoleRequest request)
         {
             var organizationUser = await _context.OrganizationUsers
                 .FirstOrDefaultAsync(ou => ou.OrganizationUserId == organizationUserId);
@@ -54,7 +54,7 @@ namespace RestaurantSaaS.Application.Services
             {
                 OrganizationUserId = organizationUserId,
                 RoleId = request.RoleId,
-                OrganizationId = organizationUser.OrganizationId,   
+                OrganizationId = organizationUser.OrganizationId,
                 AssignedAtUtc = DateTime.UtcNow
             };
 
@@ -63,7 +63,7 @@ namespace RestaurantSaaS.Application.Services
             _permissionService.InvalidateCache(organizationUserId);
             return ToResponse(userRole, role.Name);
         }
-
+        /*
         public async Task<List<UserRoleResponse>> GetAllByOrganizationUserAsync(int organizationUserId)
         {
             return await _context.UserRoles
@@ -78,6 +78,33 @@ namespace RestaurantSaaS.Application.Services
                 })
                 .ToListAsync();
         }
+        */
+
+
+        public async Task<List<UserRoleResponse>>
+            GetAllByOrganizationUserAsync(int organizationUserId)
+        {
+            return await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur =>ur.OrganizationUserId == organizationUserId)
+                .Select(ur => new UserRoleResponse
+                {
+                    UserRoleId = ur.UserRoleId,
+                    RoleId = ur.RoleId,
+
+                    RoleName = ur.Role.SystemRole != null
+                        ? ur.Role.SystemRole.Name
+                        : ur.Role.Name!,
+
+                    AssignedAtUtc = ur.AssignedAtUtc
+                })
+                .OrderBy(ur => ur.RoleName)
+                .ToListAsync();
+        }
+
+
+
+
 
         public async Task<bool> RemoveAsync(int userRoleId)
         {

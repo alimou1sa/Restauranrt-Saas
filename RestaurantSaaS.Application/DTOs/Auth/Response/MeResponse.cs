@@ -25,6 +25,8 @@ namespace RestaurantSaaS.Application.DTOs.Auth.Response
         public int? BranchId { get; set; }
         public string? BranchName { get; set; }
 
+        public List<string> Roles { get; set; } = new();
+
         public List<string> Permissions { get; set; } = new();
     }
 }

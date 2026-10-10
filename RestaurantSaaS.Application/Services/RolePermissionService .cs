@@ -21,37 +21,7 @@ namespace RestaurantSaaS.Application.Services
         {
             _context = context;
         }
-/*
-        public async Task<RolePermissionResponse> AssignAsync(int roleId, AssignPermissionRequest request)
-        {
-            var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == roleId);
-            if (!roleExists)
-                throw new KeyNotFoundException($"Role {roleId} was not found.");
 
-            var permission = await _context.Permissions
-                .FirstOrDefaultAsync(p => p.PermissionId == request.PermissionId);
-
-            if (permission is null)
-                throw new KeyNotFoundException($"Permission {request.PermissionId} was not found.");
-
-            var alreadyAssigned = await _context.RolePermissions
-                .AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == request.PermissionId);
-
-            if (alreadyAssigned)
-                throw new InvalidOperationException("This permission is already assigned to this role.");
-
-            var rolePermission = new RolePermission
-            {
-                RoleId = roleId,
-                PermissionId = request.PermissionId
-            };
-
-            _context.RolePermissions.Add(rolePermission);
-            await _context.SaveChangesAsync();
-
-            return ToResponse(rolePermission, permission.Code, permission.Name);
-        }
-        */
         public async Task<RolePermissionResponse> AssignAsync(int roleId, AssignPermissionRequest request)
         {
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleId == roleId);  
@@ -79,7 +49,65 @@ namespace RestaurantSaaS.Application.Services
             return ToResponse(rolePermission, permission.Code, permission.Name);
         }
 
+
+
+
         public async Task<List<RolePermissionResponse>> GetAllByRoleAsync(int roleId)
+        {
+            var role = await _context.Roles
+                .AsNoTracking()
+                .Where(r => r.RoleId == roleId)
+                .Select(r => new
+                {
+                    r.RoleId,
+                    r.SystemRoleId
+                })
+                .FirstOrDefaultAsync();
+
+            if (role is null)
+            {
+                throw new KeyNotFoundException($"Role {roleId} was not found.");
+            }
+
+      
+            if (role.SystemRoleId.HasValue)
+            {
+                return await _context.SystemRolePermissions
+                    .AsNoTracking()
+                    .Where(srp =>
+                        srp.SystemRoleId == role.SystemRoleId.Value)
+                    .Select(srp => new RolePermissionResponse
+                    {
+                        RolePermissionId =
+                            srp.SystemRolePermissionId,
+
+                        RoleId = role.RoleId,
+                        PermissionId = srp.PermissionId,
+                        PermissionCode = srp.Permission.Code,
+                        PermissionName = srp.Permission.Name
+                    })
+                    .OrderBy(p => p.PermissionCode)
+                    .ToListAsync();
+            }
+
+            // Custom role: permissions come from RolePermissions.
+            return await _context.RolePermissions
+                .AsNoTracking()
+                .Where(rp => rp.RoleId == roleId)
+                .Select(rp => new RolePermissionResponse
+                {
+                    RolePermissionId = rp.RolePermissionId,
+                    RoleId = rp.RoleId,
+                    PermissionId = rp.PermissionId,
+                    PermissionCode = rp.Permission.Code,
+                    PermissionName = rp.Permission.Name
+                })
+                .OrderBy(p => p.PermissionCode)
+                .ToListAsync();
+        }
+
+
+    /*    public async Task<List<RolePermissionResponse>> GetAllByRoleAsync(int roleId)
         {
             return await _context.RolePermissions
                 .AsNoTracking()
@@ -92,7 +120,7 @@ namespace RestaurantSaaS.Application.Services
                     PermissionName = rp.Permission.Name
                 })
                 .ToListAsync();
-        }
+        }*/
 
         public async Task<bool> RemoveAsync(int rolePermissionId)
         {
