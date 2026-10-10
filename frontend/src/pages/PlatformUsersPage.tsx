@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { platformApi } from '../api/platform';
+import { useAuth } from '../auth/AuthContext';
 import type { UserResponse } from '../types/api';
 import { ErrorState, Spinner } from '../components/Feedback';
 import { getErrorMessage } from '../utils/errors';
 
 export function PlatformUsersPage() {
+  const { me } = useAuth();
   const [items,setItems]=useState<UserResponse[]|null>(null); const [error,setError]=useState<string|null>(null);
   const [busyId,setBusyId]=useState<number|null>(null); const [query,setQuery]=useState('');
   async function load(){setError(null);try{setItems(await platformApi.users())}catch(e){setError(getErrorMessage(e))}}
@@ -17,7 +19,7 @@ export function PlatformUsersPage() {
       {error&&<ErrorState error={error} onRetry={()=>void load()}/>}
       {!items&&!error&&<div className="admin-loading"><Spinner/> Loading users…</div>}
       {items&&<div className="admin-table-wrap"><table><thead><tr><th>User</th><th>Email verification</th><th>Last login</th><th>Status</th><th>Action</th></tr></thead><tbody>
-        {filtered.map(u=><tr key={u.userId}><td><strong>{u.firstName} {u.lastName??''}</strong><small>Account #{u.userId}</small></td><td>{u.emailConfirmed?'Confirmed':'Not confirmed'}</td><td>{u.lastLoginAtUtc?new Date(u.lastLoginAtUtc).toLocaleString():'Never'}</td><td><span className={`admin-status ${u.isActive?'is-active':'is-inactive'}`}>{u.isActive?'Active':'Inactive'}</span></td><td><button className={`btn btn-sm ${u.isActive?'btn-danger-soft':'btn-secondary'}`} disabled={busyId===u.userId} onClick={()=>void toggle(u)}>{busyId===u.userId?'Saving…':u.isActive?'Deactivate':'Activate'}</button></td></tr>)}
+        {filtered.map(u=><tr key={u.userId}><td><strong>{u.firstName} {u.lastName??''}</strong><small>Account #{u.userId}</small></td><td>{u.emailConfirmed?'Confirmed':'Not confirmed'}</td><td>{u.lastLoginAtUtc?new Date(u.lastLoginAtUtc).toLocaleString():'Never'}</td><td><span className={`admin-status ${u.isActive?'is-active':'is-inactive'}`}>{u.isActive?'Active':'Inactive'}</span></td><td><button className={`btn btn-sm ${u.isActive?'btn-danger-soft':'btn-secondary'}`} disabled={busyId===u.userId || (u.userId===me?.userId && u.isActive)} onClick={()=>void toggle(u)}>{busyId===u.userId?'Saving…':u.userId===me?.userId && u.isActive?'Your account':u.isActive?'Deactivate':'Activate'}</button></td></tr>)}
         {!filtered.length&&<tr><td colSpan={5}>No matching users.</td></tr>}
       </tbody></table></div>}
     </section>
