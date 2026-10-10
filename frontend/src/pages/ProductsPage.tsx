@@ -21,7 +21,7 @@ export function ProductsPage(){
  else {if(!categoryId)throw new Error('Choose a menu and category before creating a product.');const created=await productsApi.create(Number(categoryId),form);setItems(old=>[{productId:created.productId,name:created.name,categoryId:created.categoryId,categoryName:created.categoryName,price:created.price,imageUrl:created.imageUrl,isAvailable:created.isAvailable,displayOrder:created.displayOrder},...(old??[])])}
  reset();
  }catch(e){setError(getErrorMessage(e))}finally{setSaving(false)}}
- function edit(p:ProductListResponse){setEditing({ ...p,description:null,isActive:true,createdAtUtc:'',updatedAtUtc:null });setForm({name:p.name,description:'',price:p.price,imageUrl:p.imageUrl??'',displayOrder:p.displayOrder})}
+ async function edit(p:ProductListResponse){try{const detail=await productsApi.get(p.productId);setEditing(detail);setForm({name:detail.name,description:detail.description??'',price:detail.price,imageUrl:detail.imageUrl??'',displayOrder:detail.displayOrder})}catch(e){setError(getErrorMessage(e))}}
  async function toggle(p:ProductListResponse){try{const updated=await productsApi.setAvailability(p.productId,{isAvailable:!p.isAvailable});setItems(old=>old?.map(x=>x.productId===p.productId?{...x,isAvailable:updated.isAvailable}:x)??[])}catch(e){setError(getErrorMessage(e))}}
  async function remove(p:ProductListResponse){if(!window.confirm(`Delete product "${p.name}"? Products with related records may not be deletable.`))return;try{await productsApi.remove(p.productId);setItems(old=>old?.filter(x=>x.productId!==p.productId)??[])}catch(e){setError(getErrorMessage(e))}}
  const filtered=(items??[]).filter(p=>[p.name,p.categoryName].some(v=>v.toLowerCase().includes(query.toLowerCase())));
