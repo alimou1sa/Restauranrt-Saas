@@ -2,7 +2,7 @@
 import axios, { AxiosError } from 'axios';
 import { authEvents } from '../auth/events';
 import { refreshSession } from '../auth/refresh';
-import { preAuthStore, sessionStore } from '../auth/storage';
+import { platformAdminStore, preAuthStore, sessionStore } from '../auth/storage';
 import { API_BASE_URL } from '../config/env';
 
 declare module 'axios' {
@@ -21,8 +21,9 @@ export const http = axios.create({
 
 http.interceptors.request.use((config) => {
   const mode = config.authMode ?? 'access';
-  const token =
-    mode === 'access' ? sessionStore.getAccessToken() : mode === 'preauth' ? preAuthStore.get()?.token : null;
+  const token = mode === 'access'
+    ? (platformAdminStore.getAccessToken() ?? sessionStore.getAccessToken())
+    : mode === 'preauth' ? preAuthStore.get()?.token : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -32,31 +33,21 @@ http.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config;
     if (!original || error.response?.status !== 401) throw error;
-
     const mode = original.authMode ?? 'access';
-
-    // PreAuth token expired (5 min lifetime): nothing to refresh, user must log in again.
     if (mode === 'preauth') {
-      preAuthStore.clear();
-      authEvents.emit('preauth-expired');
-      throw error;
+      preAuthStore.clear(); authEvents.emit('preauth-expired'); throw error;
     }
-
-    // Login itself (mode none) or an already-retried request: a 401 is a real answer.
     if (mode === 'none' || original._retried) throw error;
-
+    // Platform-admin tokens do not have a refresh token in the current API.
+    if (platformAdminStore.get()) {
+      platformAdminStore.clear(); authEvents.emit('expired'); throw error;
+    }
     if (!sessionStore.getRefreshToken()) {
-      authEvents.emit('expired');
-      throw error;
+      authEvents.emit('expired'); throw error;
     }
-
-    try {
-      await refreshSession(); // shared promise: concurrent 401s wait for the same refresh
-    } catch {
-      throw error; // refreshSession already cleared the session when the refresh was rejected
-    }
-
+    try { await refreshSession(); }
+    catch { throw error; }
     original._retried = true;
-    return http(original); // request interceptor attaches the new access token
+    return http(original);
   },
 );

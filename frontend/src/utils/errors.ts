@@ -7,6 +7,7 @@ interface ProblemDetails {
 }
 
 export function getErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (typeof error === 'string' && error.trim()) return error;
   if (axios.isAxiosError(error)) {
     if (!error.response) return 'Cannot reach the server. Check your connection and that the API is running.';
     const data = error.response.data as ProblemDetails | string | undefined;

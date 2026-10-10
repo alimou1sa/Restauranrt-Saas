@@ -21,19 +21,20 @@ export const NAVIGATION: NavGroup[] = [
     label: 'Operations',
     items: [
       { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: 'dashboard', implemented: true },
-      { key: 'orders', label: 'Orders', path: '/orders', icon: 'orders', permission: PERMISSIONS.orderRead, implemented: false },
-      { key: 'menu', label: 'Menu', path: '/menu', icon: 'menu', permission: PERMISSIONS.menuRead, implemented: false },
-      { key: 'products', label: 'Products', path: '/products', icon: 'products', permission: PERMISSIONS.productRead, implemented: false },
-      { key: 'inventory', label: 'Inventory', path: '/inventory', icon: 'inventory', permission: PERMISSIONS.inventoryRead, implemented: false },
+      { key: 'orders', label: 'Orders', path: '/orders', icon: 'orders', permission: PERMISSIONS.orderRead, implemented: true },
+      { key: 'menu', label: 'Menus & categories', path: '/menu', icon: 'menu', permission: PERMISSIONS.menuRead, implemented: true },
+      { key: 'products', label: 'Products', path: '/products', icon: 'products', permission: PERMISSIONS.productRead, implemented: true },
+      { key: 'inventory', label: 'Inventory', path: '/inventory', icon: 'inventory', permission: PERMISSIONS.inventoryRead, implemented: true },
     ],
   },
   {
     label: 'Organization',
     items: [
-      { key: 'branches', label: 'Branches', path: '/branches', icon: 'branches', permission: PERMISSIONS.branchRead, implemented: false },
+      { key: 'branches', label: 'Branches', path: '/branches', icon: 'branches', permission: PERMISSIONS.branchRead, implemented: true },
       { key: 'users', label: 'Users', path: '/users', icon: 'users', permission: PERMISSIONS.userRead, implemented: false },
       { key: 'roles', label: 'Roles & Permissions', path: '/roles', icon: 'roles', permission: PERMISSIONS.roleRead, implemented: false },
-      { key: 'settings', label: 'Settings', path: '/settings', icon: 'settings', permission: PERMISSIONS.organizationRead, implemented: false },
+      { key: 'members', label: 'Members', path: '/members', icon: 'users', permission: PERMISSIONS.userRead, implemented: true },
+      { key: 'settings', label: 'Organization', path: '/organization', icon: 'settings', permission: PERMISSIONS.organizationRead, implemented: true },
     ],
   },
 ];
