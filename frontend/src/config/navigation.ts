@@ -22,7 +22,7 @@ export const NAVIGATION: NavGroup[] = [
     items: [
       { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: 'dashboard', implemented: true },
       { key: 'orders', label: 'Orders', path: '/orders', icon: 'orders', permission: PERMISSIONS.orderRead, implemented: true },
-      { key: 'menu', label: 'Menu', path: '/menu', icon: 'menu', permission: PERMISSIONS.menuRead, implemented: false },
+      { key: 'menu', label: 'Menus & categories', path: '/menu', icon: 'menu', permission: PERMISSIONS.menuRead, implemented: true },
       { key: 'products', label: 'Products', path: '/products', icon: 'products', permission: PERMISSIONS.productRead, implemented: true },
       { key: 'inventory', label: 'Inventory', path: '/inventory', icon: 'inventory', permission: PERMISSIONS.inventoryRead, implemented: true },
     ],
