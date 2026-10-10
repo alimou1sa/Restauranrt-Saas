@@ -151,3 +151,6 @@ export interface CreateInventoryRequest { productId:number; quantity:number; reo
 export interface UpdateInventorySettingsRequest { reorderLevel:number }
 export interface CreateInventoryTransactionRequest { transactionType:string; quantity:number; referenceType?:string|null; referenceId?:number|null; notes?:string|null }
 export interface InventoryTransactionResponse { inventoryTransactionId:number; inventoryId:number; productName:string; transactionType:string; quantity:number; referenceType:string|null; referenceId:number|null; notes:string|null; createdAtUtc:string }
+
+export interface CreateOrderItemRequest { productId:number; quantity:number; discountAmount:number }
+export interface UpdateOrderItemRequest { quantity:number; discountAmount:number }
