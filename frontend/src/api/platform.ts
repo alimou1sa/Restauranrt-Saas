@@ -5,6 +5,7 @@ import type {
 
 export const platformApi = {
   organizations: () => http.get<OrganizationResponse[]>('/platform/organizations').then(r => r.data),
+  createOrganization: (body: import('../types/api').CreateOrganizationRequest) => http.post<OrganizationResponse>('/organizations', body).then(r => r.data),
   organization: (id: number) => http.get<OrganizationResponse>(`/platform/organizations/${id}`).then(r => r.data),
   setOrganizationActive: (id: number, body: SetActiveRequest) =>
     http.patch<OrganizationResponse>(`/platform/organizations/${id}/active`, body).then(r => r.data),
