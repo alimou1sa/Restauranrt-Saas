@@ -349,3 +349,28 @@ td strong { color: #34394b; font-weight: 650; }
 .admin-notice-list span { color:#64748b; font-size:12px; line-height:1.5; }
 @media(max-width:1000px){.platform-sidebar{width:220px}.platform-content{padding:22px}.admin-two-column{grid-template-columns:1fr}.member-columns{grid-template-columns:1fr}.admin-stat-grid{gap:10px}}
 @media(max-width:720px){.platform-shell{display:block}.platform-sidebar{width:auto;padding:14px}.platform-brand{padding-bottom:14px}.platform-sidebar .platform-eyebrow{padding:0 8px}.platform-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-sidebar-bottom{margin-top:14px;padding-top:12px}.platform-topbar{padding:12px 18px}.platform-content{padding:18px 12px}.admin-page-heading{align-items:flex-start;flex-direction:column}.admin-page-heading h1{font-size:25px}.admin-stat-grid{grid-template-columns:1fr}.admin-stat{padding:16px}.admin-stat strong{font-size:27px}.admin-form-grid{grid-template-columns:1fr}.plan-row{flex-direction:column}.plan-actions{justify-content:flex-start}}
+
+
+/* Restaurant operations pages */
+.toolbar-label { display:flex; align-items:center; gap:9px; color:#64748b; font-size:12px; font-weight:700; white-space:nowrap; }
+.admin-toolbar select,.admin-table-wrap td select { max-width:220px; padding:9px 10px; border:1px solid #dbe1ea; border-radius:9px; background:#fff; color:#172033; font:inherit; font-size:12px; }
+.admin-toolbar input { flex:1; min-width:130px; }
+.admin-status.is-pending { background:#ffedd5; color:#c2410c; }
+.product-catalog { display:grid; grid-template-columns:minmax(260px,.72fr) minmax(0,1.5fr); align-items:start; gap:18px; padding:18px; }
+.product-editor { position:sticky; top:18px; }
+.product-editor .admin-form { padding:18px; }
+.product-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; min-width:0; }
+.product-card { min-width:0; border:1px solid #e7eaf0; border-radius:13px; overflow:hidden; background:#fff; }
+.product-image { position:relative; height:130px; display:grid; place-items:center; background:#f8fafc; }
+.product-image img { width:100%; height:100%; object-fit:cover; }
+.product-image > span:first-child { font-size:30px; font-weight:800; color:#cbd5e1; }
+.product-image .admin-status { position:absolute; top:9px; right:9px; }
+.product-card-body { padding:13px; display:grid; gap:8px; }
+.product-card-body > small { color:#94a3b8; font-size:11px; }
+.product-card-body h3 { font-size:14px; color:#172033; overflow-wrap:anywhere; }
+.product-card-body > strong { font-size:16px; color:#c2410c; }
+.product-card-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.product-card-actions .btn { font-size:11px; padding:6px 8px; }
+@media(max-width:1150px){.product-catalog{grid-template-columns:1fr}.product-editor{position:static}.product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.product-catalog{padding:10px;gap:12px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-toolbar{flex-wrap:wrap}.toolbar-label{width:100%}.toolbar-label select{flex:1;min-width:0}.admin-table-wrap td select{min-width:130px}}
+@media(max-width:430px){.product-grid{grid-template-columns:1fr}}
