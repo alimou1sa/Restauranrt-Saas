@@ -1,4 +1,5 @@
 import { EmptyState, ErrorState, Spinner } from '../../components/Feedback';
+import { Icon } from '../../components/Icon';
 import type { OrderListResponse } from '../../types/api';
 import { formatAmount, formatDateTime } from '../../utils/format';
 
@@ -12,16 +13,22 @@ interface Props {
 
 export function RecentOrders({ allowed, loading, error, orders, onRetry }: Props) {
   return (
-    <section className="card" aria-labelledby="recent-orders-title">
-      <h2 id="recent-orders-title" className="h3">Recent orders</h2>
+    <section className="card recent-orders" aria-labelledby="recent-orders-title">
+      <div className="recent-orders-heading">
+        <div>
+          <h2 id="recent-orders-title" className="section-title">Recent orders</h2>
+          <p className="muted small">The latest activity across your accessible branch or organization.</p>
+        </div>
+        <span className="orders-count">{allowed ? orders.length : '—'} <span>shown</span></span>
+      </div>
       {!allowed ? (
-        <p className="muted small">Not available for your role (order.read).</p>
+        <div className="permission-note"><Icon name="roles" size={17} /><p>Order information is hidden because your role does not include <code>order.read</code>.</p></div>
       ) : loading ? (
         <div className="state"><Spinner label="Loading orders" /></div>
       ) : error ? (
         <ErrorState error={error} onRetry={onRetry} />
       ) : orders.length === 0 ? (
-        <EmptyState title="No orders yet" description="Orders will appear here as soon as they are created." />
+        <EmptyState title="No orders yet" description="New orders will appear here as soon as they are created." />
       ) : (
         <div className="table-wrap">
           <table>
