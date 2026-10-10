@@ -1,0 +1,40 @@
+import { useEffect,useState,type FormEvent } from 'react';
+import { branchesApi } from '../api/branches';import { productsApi } from '../api/products';
+import type { BranchResponse,ProductListResponse,MenuResponse,CategoryResponse,CreateProductRequest,ProductDetailsResponse } from '../types/api';
+import { useAuth } from '../auth/AuthContext';import { PERMISSIONS } from '../auth/permissions';
+import { ErrorState,Spinner } from '../components/Feedback';import { getErrorMessage } from '../utils/errors';import { formatAmount } from '../utils/format';
+const blank:CreateProductRequest={name:'',description:'',price:0,imageUrl:'',displayOrder:0};
+export function ProductsPage(){
+ const {hasPermission,me}=useAuth();const canManage=hasPermission(PERMISSIONS.productManage);
+ const [branches,setBranches]=useState<BranchResponse[]>([]);const [branchId,setBranchId]=useState(me?.branchId?String(me.branchId):'');
+ const [menus,setMenus]=useState<MenuResponse[]>([]);const [menuId,setMenuId]=useState('');const [categories,setCategories]=useState<CategoryResponse[]>([]);const [categoryId,setCategoryId]=useState('');
+ const [items,setItems]=useState<ProductListResponse[]|null>(null);const [query,setQuery]=useState('');const [error,setError]=useState<string|null>(null);
+ const [form,setForm]=useState<CreateProductRequest>(blank);const [editing,setEditing]=useState<ProductDetailsResponse|null>(null);const [saving,setSaving]=useState(false);
+ async function loadBranches(){try{const b=await branchesApi.list();setBranches(b);if(!branchId){const first=b.find(x=>x.isActive);if(first)setBranchId(String(first.branchId))}}catch(e){setError(getErrorMessage(e))}}
+ useEffect(()=>{void loadBranches()},[]);
+ async function loadProducts(id:number){setError(null);try{setItems(await productsApi.listByBranch(id));setMenus(await productsApi.menus(id))}catch(e){setError(getErrorMessage(e));setItems(null)}}
+ useEffect(()=>{if(branchId)void loadProducts(Number(branchId));else setItems([])},[branchId]);
+ useEffect(()=>{if(menuId){productsApi.categories(Number(menuId)).then(c=>{setCategories(c);setCategoryId(c.find(x=>x.isActive)?.categoryId.toString()??'')}).catch(e=>setError(getErrorMessage(e)))}else{setCategories([]);setCategoryId('')}},[menuId]);
+ function reset(){setEditing(null);setForm(blank)}
+ async function submit(e:FormEvent){e.preventDefault();setSaving(true);setError(null);try{
+ if(editing){const updated=await productsApi.update(editing.productId,{...form,isActive:editing.isActive});setItems(old=>old?.map(p=>p.productId===updated.productId?{productId:updated.productId,name:updated.name,categoryId:updated.categoryId,categoryName:updated.categoryName,price:updated.price,imageUrl:updated.imageUrl,isAvailable:updated.isAvailable,displayOrder:updated.displayOrder}:p)??[])}
+ else {if(!categoryId)throw new Error('Choose a menu and category before creating a product.');const created=await productsApi.create(Number(categoryId),form);setItems(old=>[{productId:created.productId,name:created.name,categoryId:created.categoryId,categoryName:created.categoryName,price:created.price,imageUrl:created.imageUrl,isAvailable:created.isAvailable,displayOrder:created.displayOrder},...(old??[])])}
+ reset();
+ }catch(e){setError(getErrorMessage(e))}finally{setSaving(false)}}
+ function edit(p:ProductListResponse){setEditing({ ...p,description:null,isActive:true,createdAtUtc:'',updatedAtUtc:null });setForm({name:p.name,description:'',price:p.price,imageUrl:p.imageUrl??'',displayOrder:p.displayOrder})}
+ async function toggle(p:ProductListResponse){try{const updated=await productsApi.setAvailability(p.productId,{isAvailable:!p.isAvailable});setItems(old=>old?.map(x=>x.productId===p.productId?{...x,isAvailable:updated.isAvailable}:x)??[])}catch(e){setError(getErrorMessage(e))}}
+ async function remove(p:ProductListResponse){if(!window.confirm(`Delete product "${p.name}"? Products with related records may not be deletable.`))return;try{await productsApi.remove(p.productId);setItems(old=>old?.filter(x=>x.productId!==p.productId)??[])}catch(e){setError(getErrorMessage(e))}}
+ const filtered=(items??[]).filter(p=>[p.name,p.categoryName].some(v=>v.toLowerCase().includes(query.toLowerCase())));
+ return <>
+ <div className="admin-page-heading"><div><span className="platform-eyebrow">MENU CATALOG</span><h1>Products</h1><p>Manage prices, categories, display order and sold-out availability.</p></div><span className="admin-count">{items?.length??'—'} products</span></div>
+ {error&&<ErrorState error={error} onRetry={()=>branchId?void loadProducts(Number(branchId)):void loadBranches()}/>}
+ <section className="admin-panel"><div className="admin-toolbar"><label className="toolbar-label">Branch<select value={branchId} onChange={e=>setBranchId(e.target.value)}>{branches.filter(b=>b.isActive).map(b=><option key={b.branchId} value={b.branchId}>{b.name}</option>)}</select></label><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search products or categories…" aria-label="Search products"/><button className="btn btn-secondary" onClick={()=>branchId&&void loadProducts(Number(branchId))}>Refresh</button></div>
+ <div className="product-catalog">
+ {canManage&&<section className="admin-panel product-editor"><div className="admin-panel-heading"><div><h2>{editing?'Edit product':'Add product'}</h2><p>{editing?'Update the product details.':'Choose a menu and category for the new product.'}</p></div>{editing&&<button className="btn btn-secondary btn-sm" onClick={reset}>Cancel</button>}</div>
+ <form className="admin-form" onSubmit={submit}>
+ {!editing&&<><label>Menu<select required value={menuId} onChange={e=>setMenuId(e.target.value)}><option value="">Choose menu…</option>{menus.filter(m=>m.isActive).map(m=><option key={m.menuId} value={m.menuId}>{m.name}</option>)}</select></label><label>Category<select required value={categoryId} onChange={e=>setCategoryId(e.target.value)}><option value="">Choose category…</option>{categories.filter(c=>c.isActive).map(c=><option key={c.categoryId} value={c.categoryId}>{c.name}</option>)}</select></label></>}
+ <label>Product name<input required maxLength={150} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></label><label>Description<textarea rows={2} maxLength={1000} value={form.description??''} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/></label><label>Price<input required type="number" min="0" step="0.01" value={form.price} onChange={e=>setForm(f=>({...f,price:Number(e.target.value)}))}/></label><label>Image URL (optional)<input type="url" maxLength={1000} value={form.imageUrl??''} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))}/></label><label>Display order<input type="number" value={form.displayOrder} onChange={e=>setForm(f=>({...f,displayOrder:Number(e.target.value)}))}/></label><button className="btn btn-primary" disabled={saving||!branchId}>{saving?<Spinner/>:null}{saving?'Saving…':editing?'Save product':'Create product'}</button>
+ </form></section>}
+ <div className="product-grid">{!items&&!error&&<div className="admin-loading"><Spinner/> Loading products…</div>}{items&&filtered.map(p=><article className="product-card" key={p.productId}><div className="product-image">{p.imageUrl?<img src={p.imageUrl} alt="" loading="lazy"/>:<span>R</span>}<span className={`admin-status ${p.isAvailable?'is-active':'is-inactive'}`}>{p.isAvailable?'Available':'Sold out'}</span></div><div className="product-card-body"><small>{p.categoryName}</small><h3>{p.name}</h3><strong>{formatAmount(p.price)}</strong><div className="product-card-actions">{canManage&&<><button className="btn btn-secondary btn-sm" onClick={()=>edit(p)}>Edit</button><button className="btn btn-secondary btn-sm" onClick={()=>void toggle(p)}>{p.isAvailable?'Mark sold out':'Mark available'}</button><button className="btn btn-danger-soft btn-sm" onClick={()=>void remove(p)}>Delete</button></>}</div></div></article>)}{items&&filtered.length===0&&<div className="state"><strong>No products found</strong><p className="muted">Try another search or create a product.</p></div>}</div>
+ </div></section></>;
+}
