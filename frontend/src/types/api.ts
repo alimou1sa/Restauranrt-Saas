@@ -145,7 +145,7 @@ export interface OrderDetailsResponse {
 }
 export interface OrderItemResponse {
  orderItemId:number; productId:number; productName:string; quantity:number; unitPrice:number;
- discountAmount:number; totalAmount:number; notes:string|null;
+ discountAmount:number; lineTotal:number;
 }
 export interface CreateInventoryRequest { productId:number; quantity:number; reorderLevel:number }
 export interface UpdateInventorySettingsRequest { reorderLevel:number }
