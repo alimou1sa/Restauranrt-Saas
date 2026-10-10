@@ -124,3 +124,30 @@ export interface InventoryResponse {
   inventoryId: number; branchId: number; productId: number; productName: string; quantity: number;
   reorderLevel: number; isLowStock: boolean; updatedAtUtc: string;
 }
+
+export interface MenuResponse { menuId:number; name:string; description:string|null; isPublished:boolean; isActive:boolean; createdAtUtc:string; updatedAtUtc:string|null }
+export interface CategoryResponse { categoryId:number; name:string; description:string|null; displayOrder:number; isActive:boolean }
+export interface CreateCategoryRequest { name:string; description?:string|null; displayOrder:number }
+export interface CreateMenuRequest { name:string; description?:string|null }
+export interface CreateBranchRequest { name:string; address?:string|null; phone?:string|null }
+export interface UpdateBranchRequest extends CreateBranchRequest { isActive:boolean }
+export interface CreateProductRequest { name:string; description?:string|null; price:number; imageUrl?:string|null; displayOrder:number }
+export interface UpdateProductRequest extends CreateProductRequest { isActive:boolean }
+export interface UpdateProductAvailabilityRequest { isAvailable:boolean }
+export interface ProductDetailsResponse extends ProductListResponse { description:string|null; isActive:boolean; createdAtUtc:string; updatedAtUtc:string|null }
+export interface CreateOrderRequest { orderType:string; tableId?:number|null; customerId?:number|null; notes?:string|null }
+export interface UpdateOrderStatusRequest { status:string }
+export interface OrderDetailsResponse {
+ orderId:number; orderNumber:string; branchId:number; branchName:string; tableId:number|null; tableName:string|null;
+ customerId:number|null; customerName:string|null; status:string; orderType:string; subTotal:number;
+ discountAmount:number; taxAmount:number; totalAmount:number; notes:string|null; createdAtUtc:string;
+ updatedAtUtc:string|null; closedAtUtc:string|null; items:OrderItemResponse[];
+}
+export interface OrderItemResponse {
+ orderItemId:number; productId:number; productName:string; quantity:number; unitPrice:number;
+ discountAmount:number; totalAmount:number; notes:string|null;
+}
+export interface CreateInventoryRequest { productId:number; quantity:number; reorderLevel:number }
+export interface UpdateInventorySettingsRequest { reorderLevel:number }
+export interface CreateInventoryTransactionRequest { transactionType:string; quantity:number; referenceType?:string|null; referenceId?:number|null; notes?:string|null }
+export interface InventoryTransactionResponse { inventoryTransactionId:number; inventoryId:number; productName:string; transactionType:string; quantity:number; referenceType:string|null; referenceId:number|null; notes:string|null; createdAtUtc:string }
