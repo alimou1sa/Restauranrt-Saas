@@ -19,5 +19,10 @@ namespace RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsRespons
         public string PermissionCode { get; set; } = null!;
 
         public string PermissionName { get; set; } = null!;
+
+
+
+
+
     }
 }

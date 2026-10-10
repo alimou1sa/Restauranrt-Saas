@@ -71,6 +71,7 @@ namespace RestaurantSaaS.Application.Services
                 ?? throw new UnauthorizedAccessException("No organization context.");
             var userId = _currentUser.UserId;
 
+
             var me = await _context.OrganizationUsers
                 .IgnoreQueryFilters().AsNoTracking()
                 .Where(ou => ou.OrganizationUserId == organizationUserId
@@ -94,9 +95,31 @@ namespace RestaurantSaaS.Application.Services
             if (me is null)
                 throw new UnauthorizedAccessException("This membership is no longer active.");
 
-            var permissions = await _permissionService.GetPermissionsAsync(organizationUserId);
-            me.Permissions = permissions.OrderBy(p => p).ToList();
+            //var permissions = await _permissionService.GetPermissionsAsync(organizationUserId);
+            //me.Permissions = permissions.OrderBy(p => p).ToList();
+
+
+            me.Roles = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur =>
+                    ur.OrganizationUserId == organizationUserId &&
+                    ur.Role.IsActive)
+                .Select(ur => ur.Role.SystemRole != null
+                    ? ur.Role.SystemRole.Name
+                    : ur.Role.Name!)
+                .Distinct()
+                .OrderBy(name => name)
+                .ToListAsync();
+
+            var permissions = await _permissionService
+                .GetPermissionsAsync(organizationUserId);
+
+            me.Permissions = permissions
+                .OrderBy(p => p)
+                .ToList();
+
             return me;
+
         }
 
        
