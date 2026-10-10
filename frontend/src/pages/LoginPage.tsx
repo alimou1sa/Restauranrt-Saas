@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Spinner } from '../components/Feedback';
 import { getErrorMessage } from '../utils/errors';
@@ -65,6 +66,7 @@ export function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <div className="login-footer"><span className="muted">New to RestaurantSaaS?</span> <Link to="/register">Registration information</Link></div>
       </div>
     </div>
   );
