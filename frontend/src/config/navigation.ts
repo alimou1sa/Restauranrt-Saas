@@ -33,7 +33,8 @@ export const NAVIGATION: NavGroup[] = [
       { key: 'branches', label: 'Branches', path: '/branches', icon: 'branches', permission: PERMISSIONS.branchRead, implemented: false },
       { key: 'users', label: 'Users', path: '/users', icon: 'users', permission: PERMISSIONS.userRead, implemented: false },
       { key: 'roles', label: 'Roles & Permissions', path: '/roles', icon: 'roles', permission: PERMISSIONS.roleRead, implemented: false },
-      { key: 'settings', label: 'Settings', path: '/settings', icon: 'settings', permission: PERMISSIONS.organizationRead, implemented: false },
+      { key: 'members', label: 'Members', path: '/members', icon: 'users', permission: PERMISSIONS.userRead, implemented: true },
+      { key: 'settings', label: 'Organization', path: '/organization', icon: 'settings', permission: PERMISSIONS.organizationRead, implemented: true },
     ],
   },
 ];
