@@ -17,18 +17,22 @@ export function PlatformPlansPage(){
    else{const created=await platformApi.createPlan(form);setItems(old=>[...(old??[]),created])}reset();
  }catch(e){setError(getErrorMessage(e))}finally{setSaving(false)}}
  async function remove(p:PlanResponse){if(!window.confirm(`Delete the plan "${p.name}"? This cannot be undone.`))return;try{await platformApi.deletePlan(p.planId);setItems(old=>old?.filter(x=>x.planId!==p.planId)??[])}catch(e){setError(getErrorMessage(e))}}
- const set=(key:keyof CreatePlanRequest,value:string)=>setForm(old=>({...old,[key]:['monthlyPrice','yearlyPrice','maxBranches','maxUsers','maxProducts'].includes(key)?(value===''?null:Number(value)):value}));
+ const setText=(key:'name'|'description',value:string)=>setForm(old=>({...old,[key]:value}));
+ const setNumber=(key:'monthlyPrice'|'yearlyPrice'|'maxBranches'|'maxUsers'|'maxProducts',value:string)=>{
+   const numeric=value===''?null:Number(value);
+   setForm(old=>({...old,[key]:numeric===null?(key==='monthlyPrice'||key==='yearlyPrice'?0:null):numeric}));
+ };
  return <>
   <div className="admin-page-heading"><div><span className="platform-eyebrow">BILLING CONFIGURATION</span><h1>Plans & pricing</h1><p>Configure the plan catalog used by the platform. This does not process payments.</p></div></div>
   {error&&<ErrorState error={error} onRetry={()=>void load()}/>}
   <div className="admin-two-column">
    <section className="admin-panel"><div className="admin-panel-heading"><div><h2>{editing?'Edit plan':'Create a plan'}</h2><p>Set prices and usage limits.</p></div>{editing&&<button className="btn btn-secondary btn-sm" onClick={reset}>Cancel</button>}</div>
     <form className="admin-form" onSubmit={submit}>
-      <label>Plan name<input required maxLength={100} value={form.name} onChange={e=>set('name',e.target.value)}/></label>
-      <label>Description<textarea rows={3} maxLength={500} value={form.description??''} onChange={e=>set('description',e.target.value)}/></label>
-      <div className="admin-form-grid"><label>Monthly price<input type="number" min="0" step="0.01" required value={form.monthlyPrice} onChange={e=>set('monthlyPrice',e.target.value)}/></label><label>Yearly price<input type="number" min="0" step="0.01" required value={form.yearlyPrice} onChange={e=>set('yearlyPrice',e.target.value)}/></label></div>
-      <div className="admin-form-grid"><label>Max branches<input type="number" min="1" value={form.maxBranches??''} onChange={e=>set('maxBranches',e.target.value)}/></label><label>Max users<input type="number" min="1" value={form.maxUsers??''} onChange={e=>set('maxUsers',e.target.value)}/></label></div>
-      <label>Max products<input type="number" min="1" value={form.maxProducts??''} onChange={e=>set('maxProducts',e.target.value)}/></label>
+      <label>Plan name<input required maxLength={100} value={form.name} onChange={e=>setText('name',e.target.value)}/></label>
+      <label>Description<textarea rows={3} maxLength={500} value={form.description??''} onChange={e=>setText('description',e.target.value)}/></label>
+      <div className="admin-form-grid"><label>Monthly price<input type="number" min="0" step="0.01" required value={form.monthlyPrice} onChange={e=>setNumber('monthlyPrice',e.target.value)}/></label><label>Yearly price<input type="number" min="0" step="0.01" required value={form.yearlyPrice} onChange={e=>setNumber('yearlyPrice',e.target.value)}/></label></div>
+      <div className="admin-form-grid"><label>Max branches<input type="number" min="1" value={form.maxBranches??''} onChange={e=>setNumber('maxBranches',e.target.value)}/></label><label>Max users<input type="number" min="1" value={form.maxUsers??''} onChange={e=>setNumber('maxUsers',e.target.value)}/></label></div>
+      <label>Max products<input type="number" min="1" value={form.maxProducts??''} onChange={e=>setNumber('maxProducts',e.target.value)}/></label>
       <button className="btn btn-primary btn-block" disabled={saving}>{saving?<Spinner label="Saving"/>:null}{saving?'Saving…':editing?'Save changes':'Create plan'}</button>
     </form>
    </section>
