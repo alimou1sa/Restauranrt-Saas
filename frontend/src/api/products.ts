@@ -11,4 +11,8 @@ export const productsApi = {
  categories: (menuId:number) => http.get<CategoryResponse[]>(`/Categories/menus/${menuId}`).then(r=>r.data),
  createMenu: (branchId:number,body:CreateMenuRequest) => http.post<MenuResponse>(`/Menus/branches/${branchId}`,body).then(r=>r.data),
  createCategory: (menuId:number,body:CreateCategoryRequest) => http.post<CategoryResponse>(`/Categories/menus/${menuId}`,body).then(r=>r.data),
+ updateMenu: (id:number,body:CreateMenuRequest & {isPublished:boolean;isActive:boolean}) => http.put<MenuResponse>(`/Menus/${id}`,body).then(r=>r.data),
+ removeMenu: (id:number) => http.delete<void>(`/Menus/${id}`),
+ updateCategory: (id:number,body:CreateCategoryRequest & {isActive:boolean}) => http.put<CategoryResponse>(`/Categories/${id}`,body).then(r=>r.data),
+ removeCategory: (id:number) => http.delete<void>(`/Categories/${id}`),
 };
