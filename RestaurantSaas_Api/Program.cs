@@ -12,7 +12,6 @@ using RestaurantSaaS.Application.Services;
 using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Infrastructure;
 using RestaurantSaaS.Infrastructure.Auth;
-using RestaurantSaaS.Infrastructure.Auth.RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Data;
 using RestaurantSaaS.Infrastructure.PasswordHashe;
 using System.Security.Claims;

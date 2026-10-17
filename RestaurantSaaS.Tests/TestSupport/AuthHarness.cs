@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using RestaurantSaaS.Application.InterfacesService;
 using RestaurantSaaS.Application.Services;
 using RestaurantSaaS.Infrastructure.Auth;
-using RestaurantSaaS.Infrastructure.Auth.RestaurantSaaS.Infrastructure.Auth;
 using RestaurantSaaS.Infrastructure.Data;
 using RestaurantSaaS.Infrastructure.PasswordHashe;
 
