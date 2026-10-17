@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using RestaurantSaaS.Domain.Entities;
 using RestaurantSaaS.Infrastructure;
 using System;
 using System.Collections.Generic;

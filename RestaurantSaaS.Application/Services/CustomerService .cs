@@ -1,9 +1,10 @@
 ﻿    using global::RestaurantSaaS.Application.DTOs.Customers.CustomersRequest;
     using global::RestaurantSaaS.Application.DTOs.Customers.CustomersResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
-    using global::RestaurantSaaS.Infrastructure;
+
     using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Domain.Common;
+using RestaurantSaaS.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

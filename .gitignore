@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local-only assets (never commit)
+frontend/
+DataBase/
+*.bak

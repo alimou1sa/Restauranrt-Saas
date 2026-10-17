@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Application.DTOs.Users.UserResponse;
 using RestaurantSaaS.Application.InterfacesService;
-using RestaurantSaaS.Infrastructure;
+using RestaurantSaaS.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

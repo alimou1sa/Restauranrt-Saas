@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using RestaurantSaaS.Application.Common;
+
 using RestaurantSaaS.Domain.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

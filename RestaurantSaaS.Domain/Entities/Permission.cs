@@ -1,8 +1,7 @@
 ﻿using RestaurantSaaS.Domain.Entities;
 using System;
 using System.Collections.Generic;
-
-namespace RestaurantSaaS.Infrastructure;
+namespace RestaurantSaaS.Domain.Entities;
 
 public partial class Permission
 {

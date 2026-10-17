@@ -2,11 +2,9 @@
 using global::RestaurantSaaS.Application.DTOs.Auth.Response;
 using global::RestaurantSaaS.Application.InterfacesService;
 using Microsoft.EntityFrameworkCore;
-using RestaurantSaaS.Application.Common;
 using RestaurantSaaS.Application.DTOs.RefreshTokens.RefreshTokensRequest;
 using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
-using RestaurantSaaS.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;

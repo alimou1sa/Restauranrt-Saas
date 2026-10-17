@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using RestaurantSaaS.Application.Common;
+
 using RestaurantSaaS.Application.InterfacesService;
 using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
@@ -99,7 +99,7 @@ public partial class AppDbContext : DbContext, IAppDbContext
             var clrType = entityType.ClrType;
 
             if (typeof(IBranchOwnedDirect).IsAssignableFrom(clrType))
-                continue;  
+                continue;
 
             if (typeof(ITenantEntity).IsAssignableFrom(clrType))
             {
@@ -113,23 +113,21 @@ public partial class AppDbContext : DbContext, IAppDbContext
     {
         var parameter = Expression.Parameter(clrType, "e");
 
-        var organizationIdProperty =Expression.Property(parameter,nameof(ITenantEntity.OrganizationId));
+        var organizationIdProperty = Expression.Property(parameter, nameof(ITenantEntity.OrganizationId));
 
-        var contextExpression =Expression.Constant(this);
+        var contextExpression = Expression.Constant(this);
 
-        var currentOrganizationId =Expression.Property(contextExpression,nameof(CurrentOrganizationId));
+        var currentOrganizationId = Expression.Property(contextExpression, nameof(CurrentOrganizationId));
 
-        var hasValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.HasValue));
+        // Lifted comparison (int? == int?) so a missing tenant becomes "orgId = NULL"
+        // (i.e. no rows) instead of touching Nullable.Value. EF evaluates the right-hand
+        // side eagerly as a query parameter, so reading .Value threw
+        // "Nullable object must have a value" whenever there was no organization context.
+        var organizationMatches = Expression.Equal(
+            Expression.Convert(organizationIdProperty, typeof(int?)),
+            currentOrganizationId);
 
-        var value =Expression.Property(currentOrganizationId,nameof(Nullable<int>.Value));
-
-
-        var organizationMatches =Expression.Equal(organizationIdProperty,value);
-
-
-        var body =Expression.AndAlso(hasValue,organizationMatches);
-
-        return Expression.Lambda(body,parameter);
+        return Expression.Lambda(organizationMatches, parameter);
     }
 
 
@@ -140,25 +138,25 @@ public partial class AppDbContext : DbContext, IAppDbContext
     private void ApplyBranchScopedFilters(ModelBuilder modelBuilder)
     {
 
-        ApplyBranchScopedFilter<Menu>(modelBuilder,e => e.Branch);
+        ApplyBranchScopedFilter<Menu>(modelBuilder, e => e.Branch);
 
-        ApplyBranchScopedFilter<RestaurantTable>(modelBuilder,e => e.Branch);
+        ApplyBranchScopedFilter<RestaurantTable>(modelBuilder, e => e.Branch);
 
-        ApplyBranchScopedFilter<Inventory>(modelBuilder,e => e.Branch);
+        ApplyBranchScopedFilter<Inventory>(modelBuilder, e => e.Branch);
 
 
         ApplyDirectTenantAndBranchFilter<Order>(modelBuilder);
 
 
-        ApplyBranchScopedFilter<Category>(modelBuilder,e => e.Menu.Branch);
+        ApplyBranchScopedFilter<Category>(modelBuilder, e => e.Menu.Branch);
 
         ApplyBranchScopedFilter<Product>(modelBuilder, e => e.Category.Menu.Branch);
 
-        ApplyBranchScopedFilter<OrderItem>(modelBuilder,e => e.Order.Branch);
+        ApplyBranchScopedFilter<OrderItem>(modelBuilder, e => e.Order.Branch);
 
-        ApplyBranchScopedFilter<Payment>(modelBuilder,e => e.Order.Branch);
+        ApplyBranchScopedFilter<Payment>(modelBuilder, e => e.Order.Branch);
 
-        ApplyBranchScopedFilter<InventoryTransaction>(modelBuilder,e => e.Inventory.Branch);
+        ApplyBranchScopedFilter<InventoryTransaction>(modelBuilder, e => e.Inventory.Branch);
     }
 
 
@@ -168,64 +166,56 @@ public partial class AppDbContext : DbContext, IAppDbContext
         var parameter = Expression.Parameter(typeof(TEntity), "e");
         var contextExpression = Expression.Constant(this);
 
-     
+
         var orgProp = Expression.Property(parameter, nameof(ITenantEntity.OrganizationId));
         var currentOrgId = Expression.Property(contextExpression, nameof(CurrentOrganizationId));
-        var orgHasValue = Expression.Property(currentOrgId, nameof(Nullable<int>.HasValue));
-        var orgValue = Expression.Property(currentOrgId, nameof(Nullable<int>.Value));
-        var tenantCheck = Expression.AndAlso(orgHasValue, Expression.Equal(orgProp, orgValue));
+        var tenantCheck = Expression.Equal(Expression.Convert(orgProp, typeof(int?)), currentOrgId);
 
-       
+        // Null-safe: never read Nullable.Value inside a query filter (EF evaluates it
+        // eagerly, which throws when the tenant/branch claim is absent).
         var branchProp = Expression.Property(parameter, nameof(IBranchOwnedDirect.BranchId));
         var currentBranchId = Expression.Property(contextExpression, nameof(CurrentBranchId));
-        var branchHasValue = Expression.Property(currentBranchId, nameof(Nullable<int>.HasValue));
-        var branchNotRestricted = Expression.Not(branchHasValue);
-        var branchValue = Expression.Property(currentBranchId, nameof(Nullable<int>.Value));
-        var branchCheck = Expression.OrElse(branchNotRestricted, Expression.Equal(branchProp, branchValue));
+        var branchNotRestricted = Expression.Equal(currentBranchId, Expression.Constant(null, typeof(int?)));
+        var branchMatches = Expression.Equal(Expression.Convert(branchProp, typeof(int?)), currentBranchId);
+        var branchCheck = Expression.OrElse(branchNotRestricted, branchMatches);
 
         var body = Expression.AndAlso(tenantCheck, branchCheck);
         var lambda = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
 
-        modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);   
+        modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);
     }
 
-    private void ApplyBranchScopedFilter<TEntity>(ModelBuilder modelBuilder,Expression<Func<TEntity, Branch>> branchSelector)where TEntity : class
+    private void ApplyBranchScopedFilter<TEntity>(ModelBuilder modelBuilder, Expression<Func<TEntity, Branch>> branchSelector) where TEntity : class
     {
         var parameter = branchSelector.Parameters[0];
 
         var branchAccess = branchSelector.Body;
 
-        var branchOrganizationId =Expression.Property(branchAccess,nameof(Branch.OrganizationId));
+        var branchOrganizationId = Expression.Property(branchAccess, nameof(Branch.OrganizationId));
 
-        var contextExpression =Expression.Constant(this);
+        var contextExpression = Expression.Constant(this);
 
-        var currentOrganizationId =Expression.Property(contextExpression,nameof(CurrentOrganizationId));
+        var currentOrganizationId = Expression.Property(contextExpression, nameof(CurrentOrganizationId));
 
-        var organizationHasValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.HasValue));
+        var organizationMatches = Expression.Equal(
+            Expression.Convert(branchOrganizationId, typeof(int?)),currentOrganizationId);
 
-        var organizationValue =Expression.Property(currentOrganizationId,nameof(Nullable<int>.Value));
+        var tenantCheck = organizationMatches;
 
-        var organizationMatches =Expression.Equal(branchOrganizationId,organizationValue);
+        var branchId = Expression.Property(branchAccess, nameof(Branch.BranchId));
 
-        var tenantCheck =Expression.AndAlso(organizationHasValue,organizationMatches);
+        var currentBranchId = Expression.Property(contextExpression, nameof(CurrentBranchId));
 
-        var branchId =Expression.Property(branchAccess,nameof(Branch.BranchId));
+        // Null-safe branch comparison (see BuildTenantFilter for why Nullable.Value is avoided).
+        var branchNotRestricted = Expression.Equal(currentBranchId, Expression.Constant(null, typeof(int?)));
 
-        var currentBranchId =Expression.Property(contextExpression,nameof(CurrentBranchId));
+        var branchMatches = Expression.Equal(Expression.Convert(branchId, typeof(int?)), currentBranchId);
 
-        var branchHasValue =Expression.Property(currentBranchId,nameof(Nullable<int>.HasValue));
+        var branchCheck = Expression.OrElse(branchNotRestricted, branchMatches);
 
-        var branchNotRestricted =Expression.Not(branchHasValue);
+        var body = Expression.AndAlso(tenantCheck, branchCheck);
 
-        var branchValue =Expression.Property(currentBranchId,nameof(Nullable<int>.Value));
-
-        var branchMatches =Expression.Equal(branchId,branchValue);
-
-        var branchCheck =Expression.OrElse(branchNotRestricted,branchMatches);
-
-        var body =Expression.AndAlso(tenantCheck,branchCheck);
-
-        var lambda =Expression.Lambda<Func<TEntity, bool>>(body,parameter);
+        var lambda = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
 
         modelBuilder.Entity<TEntity>().HasQueryFilter(lambda);
     }

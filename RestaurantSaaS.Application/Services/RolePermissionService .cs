@@ -1,7 +1,7 @@
 ﻿    using global::RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsRequest;
     using global::RestaurantSaaS.Application.DTOs.RolePermissions.RolePermissionsResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
-    using global::RestaurantSaaS.Infrastructure;
+
     using Microsoft.EntityFrameworkCore;
 using RestaurantSaaS.Domain.Entities;
 using System;

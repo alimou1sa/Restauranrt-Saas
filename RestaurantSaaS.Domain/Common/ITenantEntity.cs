@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RestaurantSaaS.Application.Common
+namespace RestaurantSaaS.Domain.Common
 {
 
     public interface ITenantEntity

@@ -21,7 +21,8 @@ namespace RestaurantSaaS.Infrastructure.Auth
                 _currentTenant = currentTenant;
                 _permissionService = permissionService;
             }
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
+            PermissionRequirement requirement)
         {
 
             if (_currentUser.IsPlatformAdmin && _currentTenant.OrganizationId.HasValue)

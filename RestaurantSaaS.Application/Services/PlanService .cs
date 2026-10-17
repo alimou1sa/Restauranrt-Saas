@@ -1,13 +1,13 @@
-﻿using System;
+﻿  using global::RestaurantSaaS.Application.DTOs.Plans.PlansRequest;
+    using global::RestaurantSaaS.Application.DTOs.Plans.PlansResponse;
+    using global::RestaurantSaaS.Application.InterfacesService;
+    using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-  using global::RestaurantSaaS.Application.DTOs.Plans.PlansRequest;
-    using global::RestaurantSaaS.Application.DTOs.Plans.PlansResponse;
-    using global::RestaurantSaaS.Application.InterfacesService;
-    using global::RestaurantSaaS.Infrastructure;
-    using Microsoft.EntityFrameworkCore;
 
 namespace RestaurantSaaS.Application.Services
 {

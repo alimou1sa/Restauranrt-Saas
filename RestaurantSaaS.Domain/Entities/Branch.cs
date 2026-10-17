@@ -1,8 +1,10 @@
-﻿using RestaurantSaaS.Application.Common;
+﻿
+using RestaurantSaaS.Domain.Common;
 using System;
 using System.Collections.Generic;
 
-namespace RestaurantSaaS.Infrastructure;
+
+namespace RestaurantSaaS.Domain.Entities;
 
 public partial class Branch: ITenantEntity
 {

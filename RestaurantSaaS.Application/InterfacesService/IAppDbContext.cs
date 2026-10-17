@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using RestaurantSaaS.Domain.Entities;
-using RestaurantSaaS.Infrastructure;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

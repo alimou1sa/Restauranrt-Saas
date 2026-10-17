@@ -1,8 +1,9 @@
 ﻿    using global::RestaurantSaaS.Application.DTOs.UserRoles.RoleRequest;
     using global::RestaurantSaaS.Application.DTOs.UserRoles.RoleResponse;
     using global::RestaurantSaaS.Application.InterfacesService;
-    using global::RestaurantSaaS.Infrastructure;
+
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data;

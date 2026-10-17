@@ -1,13 +1,14 @@
-﻿using System;
+﻿    using global::RestaurantSaaS.Application.DTOs.Inventories.InventoriesRequest;
+    using global::RestaurantSaaS.Application.DTOs.Inventories.InventoriesResponse;
+    using global::RestaurantSaaS.Application.InterfacesService;
+
+    using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-    using global::RestaurantSaaS.Application.DTOs.Inventories.InventoriesRequest;
-    using global::RestaurantSaaS.Application.DTOs.Inventories.InventoriesResponse;
-    using global::RestaurantSaaS.Application.InterfacesService;
-    using global::RestaurantSaaS.Infrastructure;
-    using Microsoft.EntityFrameworkCore;
 namespace RestaurantSaaS.Application.Services
 {
 
@@ -60,12 +61,33 @@ namespace RestaurantSaaS.Application.Services
         }
 
 
-        public async Task<List<InventoryResponse>> GetAllByBranchAsync(int branchId)
+        //public async Task<List<InventoryResponse>> GetAllByBranchAsync(int branchId)
+        //{
+        //    return await Projection()
+        //        .Where(i => i.BranchId == branchId)
+        //        .ToListAsync();
+        //}
+
+       public async Task<List<InventoryResponse>> GetAllByBranchAsync(int branchId)
         {
-            return await Projection()
+            return await _context.Inventories
+                .AsNoTracking()
                 .Where(i => i.BranchId == branchId)
+                .Select(i => new InventoryResponse
+                {
+                    InventoryId = i.InventoryId,
+                    ProductId = i.ProductId,
+                    ProductName = i.Product.Name,
+                    Quantity = i.Quantity,
+                    ReorderLevel = i.ReorderLevel,
+                    IsLowStock = i.Quantity <= i.ReorderLevel,
+                    UpdatedAtUtc = i.UpdatedAtUtc
+                })
                 .ToListAsync();
         }
+
+
+
 
         public async Task<InventoryResponse?> UpdateSettingsAsync(int inventoryId, UpdateInventorySettingsRequest request)
         {
