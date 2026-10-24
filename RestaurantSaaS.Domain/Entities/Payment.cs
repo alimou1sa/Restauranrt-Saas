@@ -20,5 +20,9 @@ public partial class Payment
 
     public DateTime CreatedAtUtc { get; set; }
 
+    public int? CreatedByOrganizationUserId { get; set; }
+
+    public int? ConfirmedByOrganizationUserId { get; set; }
+
     public virtual Order Order { get; set; } = null!;
 }

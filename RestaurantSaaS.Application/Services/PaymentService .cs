@@ -3,6 +3,7 @@
     using global::RestaurantSaaS.Application.InterfacesService;
  
     using Microsoft.EntityFrameworkCore;
+using RestaurantSaaS.Domain.Common;
 using RestaurantSaaS.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -14,14 +15,13 @@ namespace RestaurantSaaS.Application.Services
 
     public class PaymentService : IPaymentService
     {
-        private static readonly string[] AllowedMethods = { "Cash", "Card", "Online", "Other" };
-        private static readonly string[] AllowedStatuses = { "Pending", "Completed", "Failed", "Refunded" };
-
         private readonly IAppDbContext _context;
+        private readonly ICurrentTenant _currentTenant;
 
-        public PaymentService(IAppDbContext context)
+        public PaymentService(IAppDbContext context, ICurrentTenant currentTenant)
         {
             _context = context;
+            _currentTenant = currentTenant;
         }
 
         public async Task<PaymentResponse> CreateAsync(int orderId, CreatePaymentRequest request)
@@ -32,26 +32,81 @@ namespace RestaurantSaaS.Application.Services
             if (!orderExists)
                 throw new KeyNotFoundException($"Order {orderId} was not found.");
 
-            if (!AllowedMethods.Contains(request.PaymentMethod))
+            if (!PaymentRules.AllowedMethods.Contains(request.PaymentMethod))
                 throw new InvalidOperationException($"'{request.PaymentMethod}' is not a valid payment method.");
 
-            var isCash = request.PaymentMethod == "Cash";
+            if (request.Amount <= 0)
+                throw new InvalidOperationException(PaymentRules.AmountMustBePositiveMessage);
 
-            var payment = new Payment
+            // The column is decimal(18, 2): reject extra decimals instead of letting the database round them silently.
+            if (decimal.Round(request.Amount, 2) != request.Amount)
+                throw new InvalidOperationException(PaymentRules.AmountDecimalsMessage);
+
+            var isCash = request.PaymentMethod == PaymentRules.Cash;
+            var reference = string.IsNullOrWhiteSpace(request.TransactionReference) ? null : request.TransactionReference.Trim();
+
+            if (!isCash && reference is null)
+                throw new InvalidOperationException(PaymentRules.ReferenceRequiredMessage);
+
+            await using var transaction = await _context.BeginTransactionAsync();
+            try
             {
-                OrderId = orderId,
-                Amount = request.Amount,
-                PaymentMethod = request.PaymentMethod,
-                Status = isCash ? "Completed" : "Pending",
-                TransactionReference = request.TransactionReference,
-                PaidAtUtc = isCash ? DateTime.UtcNow : null,
-                CreatedAtUtc = DateTime.UtcNow
-            };
+                // Taking the order row's update lock makes concurrent payments on the same order wait for each other,
+                // so the balance check below cannot be raced by a second request.
+                var order = await LockOrderAsync(orderId)
+                    ?? throw new KeyNotFoundException($"Order {orderId} was not found.");
 
-            _context.Payments.Add(payment);
-            await _context.SaveChangesAsync();
+                if (order.Status == OrderStatusRules.Canceled)
+                    throw new InvalidOperationException(PaymentRules.OrderCanceledMessage);
 
-            return (await GetByIdAsync(payment.PaymentId))!;
+                if (!isCash)
+                {
+                    // A failed payment never moved money, so its reference may be recorded again.
+                    var duplicate = await _context.Payments.AnyAsync(p =>
+                        p.Order.OrganizationId == order.OrganizationId
+                        && p.PaymentMethod == request.PaymentMethod
+                        && p.TransactionReference == reference
+                        && p.Status != PaymentRules.Failed);
+
+                    if (duplicate)
+                        throw new InvalidOperationException(PaymentRules.ReferenceDuplicateMessage);
+                }
+
+                var committed = await _context.Payments
+                    .Where(p => p.OrderId == orderId && (p.Status == PaymentRules.Completed || p.Status == PaymentRules.Pending))
+                    .SumAsync(p => (decimal?)p.Amount) ?? 0m;
+                var remaining = order.TotalAmount - committed;
+
+                if (request.Amount > remaining)
+                    throw new InvalidOperationException(PaymentRules.ExceedsBalanceMessage(Math.Max(remaining, 0m)));
+
+                var now = DateTime.UtcNow;
+                var userId = _currentTenant.OrganizationUserId;
+
+                var payment = new Payment
+                {
+                    OrderId = orderId,
+                    Amount = request.Amount,
+                    PaymentMethod = request.PaymentMethod,
+                    Status = isCash ? PaymentRules.Completed : PaymentRules.Pending,
+                    TransactionReference = reference,
+                    PaidAtUtc = isCash ? now : null,
+                    CreatedAtUtc = now,
+                    CreatedByOrganizationUserId = userId,
+                    ConfirmedByOrganizationUserId = isCash ? userId : null
+                };
+
+                _context.Payments.Add(payment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return (await GetByIdAsync(payment.PaymentId))!;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<PaymentResponse?> GetByIdAsync(int paymentId)
@@ -59,21 +114,7 @@ namespace RestaurantSaaS.Application.Services
             return await _context.Payments
                 .AsNoTracking()
                 .Where(p => p.PaymentId == paymentId)
-                .Select(p => new PaymentResponse
-                {
-                    PaymentId = p.PaymentId,
-                    OrderId = p.OrderId,
-                    OrderNumber = p.Order.OrderNumber,
-                    CustomerName = p.Order.Customer == null ? null 
-                        : p.Order.Customer.LastName == null ? p.Order.Customer.FirstName
-                        : p.Order.Customer.FirstName + " " + p.Order.Customer.LastName,
-                    Amount = p.Amount,
-                    PaymentMethod = p.PaymentMethod,
-                    Status = p.Status,
-                    TransactionReference = p.TransactionReference,
-                    PaidAtUtc = p.PaidAtUtc,
-                    CreatedAtUtc = p.CreatedAtUtc
-                })
+                .Select(ToResponse)
                 .FirstOrDefaultAsync();
         }
 
@@ -83,41 +124,83 @@ namespace RestaurantSaaS.Application.Services
             return await _context.Payments
                 .AsNoTracking()
                 .Where(p => p.OrderId == orderId)
-                .Select(p => new PaymentResponse
-                {
-                    PaymentId = p.PaymentId,
-                    OrderId = p.OrderId,
-                    OrderNumber = p.Order.OrderNumber,
-                    CustomerName = p.Order.Customer == null ? null
-                        : p.Order.Customer.LastName == null ? p.Order.Customer.FirstName
-                        : p.Order.Customer.FirstName + " " + p.Order.Customer.LastName,
-                    Amount = p.Amount,
-                    PaymentMethod = p.PaymentMethod,
-                    Status = p.Status,
-                    TransactionReference = p.TransactionReference,
-                    PaidAtUtc = p.PaidAtUtc,
-                    CreatedAtUtc = p.CreatedAtUtc
-                })
+                .Select(ToResponse)
                 .ToListAsync();
         }
 
         public async Task<PaymentResponse?> UpdateStatusAsync(int paymentId, UpdatePaymentStatusRequest request)
         {
-            if (!AllowedStatuses.Contains(request.Status))
+            if (!PaymentRules.AllowedStatuses.Contains(request.Status))
                 throw new InvalidOperationException($"'{request.Status}' is not a valid payment status.");
 
-            var payment = await _context.Payments.FindAsync(paymentId);
-            if (payment is null)
+            var orderId = await _context.Payments
+                .Where(p => p.PaymentId == paymentId)
+                .Select(p => (int?)p.OrderId)
+                .FirstOrDefaultAsync();
+            if (orderId is null)
                 return null;
 
-            payment.Status = request.Status;
+            await using var transaction = await _context.BeginTransactionAsync();
+            try
+            {
+                // Same order lock as CreateAsync and the order completion check: a refund and an order completion
+                // on the same order cannot interleave.
+                await LockOrderAsync(orderId.Value);
 
-            if (request.Status == "Completed" && payment.PaidAtUtc is null)
-                payment.PaidAtUtc = DateTime.UtcNow;
+                var payment = await _context.Payments.FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+                if (payment is null)
+                    return null;
 
-            await _context.SaveChangesAsync();
+                if (!PaymentRules.CanMove(payment.Status, request.Status))
+                    throw new InvalidOperationException(PaymentRules.TransitionMessage(payment.Status, request.Status));
+
+                payment.Status = request.Status;
+
+                if (request.Status == PaymentRules.Completed)
+                {
+                    payment.PaidAtUtc ??= DateTime.UtcNow;
+                    payment.ConfirmedByOrganizationUserId = _currentTenant.OrganizationUserId;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             return await GetByIdAsync(paymentId);
         }
+
+        private async Task<Order?> LockOrderAsync(int orderId)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+            if (order is null)
+                return null;
+
+            order.UpdatedAtUtc = DateTime.UtcNow; // an UPDATE holds the row lock until the surrounding transaction ends
+            await _context.SaveChangesAsync();
+            return order;
+        }
+
+        private static readonly System.Linq.Expressions.Expression<Func<Payment, PaymentResponse>> ToResponse = p => new PaymentResponse
+        {
+            PaymentId = p.PaymentId,
+            OrderId = p.OrderId,
+            OrderNumber = p.Order.OrderNumber,
+            CustomerName = p.Order.Customer == null ? null
+                : p.Order.Customer.LastName == null ? p.Order.Customer.FirstName
+                : p.Order.Customer.FirstName + " " + p.Order.Customer.LastName,
+            Amount = p.Amount,
+            PaymentMethod = p.PaymentMethod,
+            Status = p.Status,
+            TransactionReference = p.TransactionReference,
+            PaidAtUtc = p.PaidAtUtc,
+            CreatedAtUtc = p.CreatedAtUtc,
+            CreatedByOrganizationUserId = p.CreatedByOrganizationUserId,
+            ConfirmedByOrganizationUserId = p.ConfirmedByOrganizationUserId
+        };
     }
 }

@@ -22,7 +22,7 @@ namespace RestaurantSaas_Api.Controllers
         }
         [HasPermission("order.manage")]
         [HttpPost("branches/{branchId:int}", Name = "CreateOrder")]
-        public async Task<ActionResult<OrderDetailsResponse>> Create(int branchId,[FromBody] CreateOrderRequest request)
+        public async Task<ActionResult<OrderDetailsResponse>> Create(int branchId, [FromBody] CreateOrderRequest request)
         {
             if (branchId <= 0)
                 return BadRequest(new { message = "Branch ID must be greater than 0." });
@@ -57,7 +57,7 @@ namespace RestaurantSaas_Api.Controllers
         }
 
         [HasPermission("order.read")]
-        [HttpGet( Name = "GetOrdersByOrganization")]
+        [HttpGet(Name = "GetOrdersByOrganization")]
         public async Task<ActionResult<IEnumerable<OrderListResponse>>> GetOrders()
         {
 
@@ -68,7 +68,7 @@ namespace RestaurantSaas_Api.Controllers
 
         [HasPermission("order.manage")]
         [HttpPut("{orderId:int}", Name = "UpdateOrder")]
-        public async Task<ActionResult<OrderDetailsResponse>> Update(int orderId,[FromBody] UpdateOrderRequest request)
+        public async Task<ActionResult<OrderDetailsResponse>> Update(int orderId, [FromBody] UpdateOrderRequest request)
         {
             if (orderId <= 0)
                 return BadRequest(new { message = "Order ID must be greater than 0." });
@@ -89,7 +89,7 @@ namespace RestaurantSaas_Api.Controllers
 
         [HasPermission("order.manage")]
         [HttpPatch("{orderId:int}/status", Name = "UpdateOrderStatus")]
-        public async Task<ActionResult<OrderDetailsResponse>> UpdateStatus(int orderId,[FromBody] UpdateOrderStatusRequest request)
+        public async Task<ActionResult<OrderDetailsResponse>> UpdateStatus(int orderId, [FromBody] UpdateOrderStatusRequest request)
         {
             if (orderId <= 0)
                 return BadRequest(new { message = "Order ID must be greater than 0." });
@@ -122,6 +122,10 @@ namespace RestaurantSaas_Api.Controllers
                 return deleted
                     ? NoContent()
                     : NotFound(new { message = "Order not found." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
             }
             catch (DbUpdateException)
             {

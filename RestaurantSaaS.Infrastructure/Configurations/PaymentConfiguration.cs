@@ -34,6 +34,20 @@ internal class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasForeignKey(d => d.OrderId)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Payments_Orders");
+
+        entity.Property(e => e.CreatedByOrganizationUserId).HasColumnName("CreatedByOrganizationUserID");
+        entity.Property(e => e.ConfirmedByOrganizationUserId).HasColumnName("ConfirmedByOrganizationUserID");
+
+        // No navigation properties: only the ids are kept. NoAction so removing a member never cascades into payments.
+        entity.HasOne<OrganizationUser>().WithMany()
+            .HasForeignKey(d => d.CreatedByOrganizationUserId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasConstraintName("FK_Payments_CreatedBy_OrganizationUsers");
+
+        entity.HasOne<OrganizationUser>().WithMany()
+            .HasForeignKey(d => d.ConfirmedByOrganizationUserId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasConstraintName("FK_Payments_ConfirmedBy_OrganizationUsers");
     }
 
 

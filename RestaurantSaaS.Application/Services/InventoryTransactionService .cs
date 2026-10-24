@@ -48,6 +48,7 @@ namespace RestaurantSaaS.Application.Services
 
             _context.InventoryTransactions.Add(transaction);
 
+
             inventory.Quantity = resultingQuantity;
             inventory.UpdatedAtUtc = DateTime.UtcNow;
 

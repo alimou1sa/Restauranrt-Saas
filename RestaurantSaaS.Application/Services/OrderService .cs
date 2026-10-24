@@ -13,14 +13,8 @@ using System.Text;
 using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
-
     public class OrderService : IOrderService
     {
-        private static readonly string[] AllowedStatuses =
-            { "Pending", "Confirmed", "Preparing", "Ready", "Served", "Completed", "Canceled" };
-
-        private static readonly string[] ClosedStatuses = { "Completed", "Canceled" };
-
         private readonly IAppDbContext _context;
         private readonly ICurrentTenant _currentTenant;
         public OrderService(IAppDbContext context, ICurrentTenant currentTenant)
@@ -56,7 +50,7 @@ namespace RestaurantSaaS.Application.Services
                     throw new InvalidOperationException($"Customer {request.CustomerId} does not belong to this organization.");
             }
 
-   
+
 
             var orderNumber = $"ORD-{branchId}-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid().ToString("N")[..4]}";
 
@@ -65,7 +59,7 @@ namespace RestaurantSaaS.Application.Services
             {
                 BranchId = branchId,
                 OrganizationId = branch.OrganizationId,
-               
+
                 TableId = request.TableId,
                 CustomerId = request.CustomerId,
                 OrderNumber = orderNumber,
@@ -109,6 +103,8 @@ namespace RestaurantSaaS.Application.Services
                     DiscountAmount = o.DiscountAmount,
                     TaxAmount = o.TaxAmount,
                     TotalAmount = o.TotalAmount,
+                    PaidAmount = o.Payments.Where(p => p.Status == PaymentRules.Completed).Sum(p => (decimal?)p.Amount) ?? 0m,
+                    BalanceDue = o.TotalAmount - (o.Payments.Where(p => p.Status == PaymentRules.Completed).Sum(p => (decimal?)p.Amount) ?? 0m),
                     Notes = o.Notes,
                     CreatedAtUtc = o.CreatedAtUtc,
                     UpdatedAtUtc = o.UpdatedAtUtc,
@@ -147,6 +143,7 @@ namespace RestaurantSaaS.Application.Services
                     Status = o.Status,
                     OrderType = o.OrderType,
                     TotalAmount = o.TotalAmount,
+                    PaidAmount = o.Payments.Where(p => p.Status == PaymentRules.Completed).Sum(p => (decimal?)p.Amount) ?? 0m,
                     CreatedAtUtc = o.CreatedAtUtc
                 })
                 .ToListAsync();
@@ -157,6 +154,9 @@ namespace RestaurantSaaS.Application.Services
             var order = await _context.Orders.FindAsync(orderId);
             if (order is null)
                 return null;
+
+            if (OrderStatusRules.IsClosed(order.Status))
+                throw new InvalidOperationException(OrderStatusRules.ClosedOrderModifyMessage);
 
             if (request.TableId is not null)
             {
@@ -181,6 +181,11 @@ namespace RestaurantSaaS.Application.Services
                     throw new InvalidOperationException($"Customer {request.CustomerId} does not belong to this order's organization.");
             }
 
+            // A discount change moves the total under money that was already received, so it is refused once a payment completed.
+            if (request.DiscountAmount != order.DiscountAmount
+                && await _context.Payments.AnyAsync(p => p.OrderId == orderId && p.Status == PaymentRules.Completed))
+                throw new InvalidOperationException(OrderStatusRules.DiscountHasPaymentsMessage);
+
             order.TableId = request.TableId;
             order.CustomerId = request.CustomerId;
             order.Notes = request.Notes;
@@ -195,20 +200,61 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<OrderDetailsResponse?> UpdateStatusAsync(int orderId, UpdateOrderStatusRequest request)
         {
-            if (!AllowedStatuses.Contains(request.Status))
+            if (!OrderStatusRules.AllStatuses.Contains(request.Status))
                 throw new InvalidOperationException($"'{request.Status}' is not a valid order status.");
 
             var order = await _context.Orders.FindAsync(orderId);
             if (order is null)
                 return null;
 
-            order.Status = request.Status;
-            order.UpdatedAtUtc = DateTime.UtcNow;
+            await using var transaction = await _context.BeginTransactionAsync();
+            try
+            {
+                // The UPDATE takes the order row lock (shared with PaymentService), then the status and total are read
+                // again: what is checked below cannot change underneath this request until it commits.
+                order.UpdatedAtUtc = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
 
-            if (ClosedStatuses.Contains(request.Status) && order.ClosedAtUtc is null)
-                order.ClosedAtUtc = DateTime.UtcNow;
+                var current = await _context.Orders
+                    .AsNoTracking()
+                    .Where(o => o.OrderId == orderId)
+                    .Select(o => new { o.Status, o.TotalAmount })
+                    .FirstAsync();
 
-            await _context.SaveChangesAsync();
+                if (OrderStatusRules.IsClosed(current.Status))
+                    throw new InvalidOperationException(OrderStatusRules.ClosedOrderStatusMessage);
+
+                if (!OrderStatusRules.CanMove(current.Status, request.Status))
+                    throw new InvalidOperationException(OrderStatusRules.BackwardStatusMessage);
+
+                if (request.Status == OrderStatusRules.Completed)
+                {
+                    var paid = await _context.Payments
+                        .Where(p => p.OrderId == orderId && p.Status == PaymentRules.Completed)
+                        .SumAsync(p => (decimal?)p.Amount) ?? 0m;
+
+                    // A zero-total order has nothing to pay and may be completed.
+                    if (paid < current.TotalAmount)
+                        throw new InvalidOperationException(OrderStatusRules.CompleteUnpaidMessage(current.TotalAmount - paid));
+                }
+
+                var now = DateTime.UtcNow;
+                order.Status = request.Status;
+                order.UpdatedAtUtc = now;
+
+                // Only open orders reach this point, so ClosedAtUtc is always empty here: it is set once, when the order
+                // closes, and can never change afterwards because closed orders are rejected above.
+                if (OrderStatusRules.IsClosed(request.Status))
+                    order.ClosedAtUtc = now;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             return await GetByIdAsync(orderId);
         }
@@ -219,8 +265,30 @@ namespace RestaurantSaaS.Application.Services
             if (order is null)
                 return false;
 
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            if (OrderStatusRules.IsClosed(order.Status))
+                throw new InvalidOperationException(OrderStatusRules.ClosedOrderDeleteMessage);
+
+            if (order.Status != OrderStatusRules.Pending)
+                throw new InvalidOperationException(OrderStatusRules.DeleteOnlyPendingMessage);
+
+            if (await _context.Payments.AnyAsync(p => p.OrderId == orderId))
+                throw new InvalidOperationException(OrderStatusRules.DeleteWithPaymentsMessage);
+
+            // A Pending order without payments may still have items; they go with it (the FK is not cascading).
+            await using var transaction = await _context.BeginTransactionAsync();
+            try
+            {
+                var items = await _context.OrderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
+                _context.OrderItems.RemoveRange(items);
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             return true;
         }

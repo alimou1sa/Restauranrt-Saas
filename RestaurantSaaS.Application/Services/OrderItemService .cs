@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace RestaurantSaaS.Application.Services
 {
 
+
     public class OrderItemService : IOrderItemService
     {
         private readonly IAppDbContext _context;
@@ -24,9 +25,17 @@ namespace RestaurantSaaS.Application.Services
 
         public async Task<OrderItemResponse> AddAsync(int orderId, CreateOrderItemRequest request)
         {
-            var orderExists = await _context.Orders.AnyAsync(o => o.OrderId == orderId);
-            if (!orderExists)
+            var orderStatus = await _context.Orders
+                .Where(o => o.OrderId == orderId)
+                .Select(o => o.Status)
+                .FirstOrDefaultAsync();
+            if (orderStatus is null)
                 throw new KeyNotFoundException($"Order {orderId} was not found.");
+
+            if (OrderStatusRules.IsClosed(orderStatus))
+                throw new InvalidOperationException(OrderStatusRules.ClosedOrderItemsMessage);
+
+            await EnsureNoCompletedPaymentsAsync(orderId);
 
             var product = await _context.Products
                 .Where(p => p.ProductId == request.ProductId)
@@ -44,7 +53,7 @@ namespace RestaurantSaaS.Application.Services
             if (product.BranchId != orderBranchId)
                 throw new InvalidOperationException($"Product {request.ProductId} does not belong to this order's branch.");
 
-            await using var transaction = await _context.BeginTransactionAsync();  
+            await using var transaction = await _context.BeginTransactionAsync();
             try
             {
                 var orderItem = new OrderItem
@@ -58,17 +67,17 @@ namespace RestaurantSaaS.Application.Services
                 };
 
                 _context.OrderItems.Add(orderItem);
-                await _context.SaveChangesAsync();   
+                await _context.SaveChangesAsync();
 
                 await RecalculateOrderTotalsInternalAsync(orderId);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();   
+                await transaction.CommitAsync();
 
                 return ToResponse(orderItem);
             }
             catch
             {
-                await transaction.RollbackAsync();   
+                await transaction.RollbackAsync();
                 throw;
             }
         }
@@ -78,6 +87,8 @@ namespace RestaurantSaaS.Application.Services
             var orderItem = await _context.OrderItems.FindAsync(orderItemId);
             if (orderItem is null)
                 return false;
+
+            await EnsureOrderIsOpenAsync(orderItem.OrderId);
 
             var orderId = orderItem.OrderId;
 
@@ -89,17 +100,17 @@ namespace RestaurantSaaS.Application.Services
 
                 await RecalculateOrderTotalsInternalAsync(orderId);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();   
+                await transaction.CommitAsync();
 
                 return true;
             }
             catch
             {
-                await transaction.RollbackAsync();  
+                await transaction.RollbackAsync();
                 throw;
             }
         }
-     
+
         private async Task RecalculateOrderTotalsInternalAsync(int orderId)
         {
             var order = await _context.Orders.FindAsync(orderId);
@@ -113,7 +124,7 @@ namespace RestaurantSaaS.Application.Services
             order.SubTotal = subTotal;
             order.TotalAmount = subTotal - order.DiscountAmount + order.TaxAmount;
             order.UpdatedAtUtc = DateTime.UtcNow;
-    
+
 
         }
 
@@ -135,8 +146,21 @@ namespace RestaurantSaaS.Application.Services
                 .ToListAsync();
         }
 
-        public async Task<OrderItemResponse?> UpdateAsync(int orderItemId,UpdateOrderItemRequest request)
+        public async Task<OrderItemResponse?> UpdateAsync(int orderItemId, UpdateOrderItemRequest request)
         {
+            // Look up the order status before opening the transaction: a closed order must not be touched at all.
+            var parent = await _context.OrderItems
+                .Where(oi => oi.OrderItemId == orderItemId)
+                .Select(oi => new { oi.OrderId, oi.Order.Status })
+                .FirstOrDefaultAsync();
+            if (parent is null)
+                return null;
+
+            if (OrderStatusRules.IsClosed(parent.Status))
+                throw new InvalidOperationException(OrderStatusRules.ClosedOrderItemsMessage);
+
+            await EnsureNoCompletedPaymentsAsync(parent.OrderId);
+
             await using var transaction = await _context.BeginTransactionAsync();
 
             try
@@ -176,6 +200,26 @@ namespace RestaurantSaaS.Application.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        private async Task EnsureOrderIsOpenAsync(int orderId)
+        {
+            var status = await _context.Orders
+                .Where(o => o.OrderId == orderId)
+                .Select(o => o.Status)
+                .FirstOrDefaultAsync();
+
+            if (status is not null && OrderStatusRules.IsClosed(status))
+                throw new InvalidOperationException(OrderStatusRules.ClosedOrderItemsMessage);
+
+            await EnsureNoCompletedPaymentsAsync(orderId);
+        }
+
+        // Once money was received the lines are frozen; a refund (status Refunded) lifts the restriction again.
+        private async Task EnsureNoCompletedPaymentsAsync(int orderId)
+        {
+            if (await _context.Payments.AnyAsync(p => p.OrderId == orderId && p.Status == PaymentRules.Completed))
+                throw new InvalidOperationException(OrderStatusRules.ItemsHavePaymentsMessage);
         }
 
         private static OrderItemResponse ToResponse(OrderItem orderItem)

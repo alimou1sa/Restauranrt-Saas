@@ -21,7 +21,7 @@ namespace RestaurantSaas_Api.Controllers
 
         [HasPermission("order.manage")]
         [HttpPost("orders/{orderId:int}", Name = "AddOrderItem")]
-        public async Task<ActionResult<OrderItemResponse>> Add(int orderId,[FromBody] CreateOrderItemRequest request)
+        public async Task<ActionResult<OrderItemResponse>> Add(int orderId, [FromBody] CreateOrderItemRequest request)
         {
             if (orderId <= 0)
                 return BadRequest(new { message = "Order ID must be greater than 0." });
@@ -54,16 +54,23 @@ namespace RestaurantSaas_Api.Controllers
 
         [HasPermission("order.manage")]
         [HttpPut("{orderItemId:int}", Name = "UpdateOrderItem")]
-        public async Task<ActionResult<OrderItemResponse>> Update(int orderItemId,[FromBody] UpdateOrderItemRequest request)
+        public async Task<ActionResult<OrderItemResponse>> Update(int orderItemId, [FromBody] UpdateOrderItemRequest request)
         {
             if (orderItemId <= 0)
                 return BadRequest(new { message = "Order item ID must be greater than 0." });
 
-            var item = await _orderItemService.UpdateAsync(orderItemId, request);
+            try
+            {
+                var item = await _orderItemService.UpdateAsync(orderItemId, request);
 
-            return item is null
-                ? NotFound(new { message = "Order item not found." })
-                : Ok(item);
+                return item is null
+                    ? NotFound(new { message = "Order item not found." })
+                    : Ok(item);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
 
         [HasPermission("order.manage")]
@@ -73,11 +80,18 @@ namespace RestaurantSaas_Api.Controllers
             if (orderItemId <= 0)
                 return BadRequest(new { message = "Order item ID must be greater than 0." });
 
-            var removed = await _orderItemService.RemoveAsync(orderItemId);
+            try
+            {
+                var removed = await _orderItemService.RemoveAsync(orderItemId);
 
-            return removed
-                ? NoContent()
-                : NotFound(new { message = "Order item not found." });
+                return removed
+                    ? NoContent()
+                    : NotFound(new { message = "Order item not found." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
     }
 }

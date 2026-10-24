@@ -34,6 +34,11 @@ public class OrderDetailsResponse
 
     public decimal TotalAmount { get; set; }
 
+    // Computed on the server from Completed payments only. BalanceDue = TotalAmount - PaidAmount.
+    public decimal PaidAmount { get; set; }
+
+    public decimal BalanceDue { get; set; }
+
     public string? Notes { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }

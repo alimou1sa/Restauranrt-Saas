@@ -21,4 +21,8 @@ public class PaymentResponse
     public DateTime? PaidAtUtc { get; set; }
 
     public DateTime CreatedAtUtc { get; set; }
+
+    public int? CreatedByOrganizationUserId { get; set; }
+
+    public int? ConfirmedByOrganizationUserId { get; set; }
 }
