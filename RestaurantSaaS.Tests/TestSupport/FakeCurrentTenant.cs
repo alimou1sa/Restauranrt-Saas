@@ -3,10 +3,9 @@ using RestaurantSaaS.Domain.Common;
 namespace RestaurantSaaS.Tests.TestSupport;
 
 /// <summary>
-/// A settable <see cref="ICurrentTenant"/> used to simulate the tenant/branch context that
-/// <c>CurrentTenant</c> would normally read from the JWT claims of the current request.
-/// Each <c>AppDbContext</c> built by <see cref="IsolationDatabase"/> gets its own instance so
-/// two contexts in the same test can represent two different tenants at the same time.
+/// A very small <see cref="ICurrentTenant"/> for tests.
+/// <see cref="RestaurantSaaS.Infrastructure.Data.AppDbContext"/> uses it to decide which rows a query may see:
+/// when <see cref="OrganizationId"/> is null, every tenant table returns zero rows.
 /// </summary>
 public sealed class FakeCurrentTenant : ICurrentTenant
 {
