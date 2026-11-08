@@ -221,6 +221,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Optional: create the database schema on startup.
+// docker-compose sets Database:AutoCreate=true because the project has no EF migrations yet.
+// It stays disabled for normal local runs, so your existing database is never touched.
+if (builder.Configuration.GetValue<bool>("Database:AutoCreate"))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

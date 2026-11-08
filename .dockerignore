@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/.git/
+**/*.user
+**/*.suo
+**/.history/
+
+# Local-only assets that must never be sent to the Docker daemon
+frontend/
+DataBase/
+*.bak
+*.mdf
+*.ldf

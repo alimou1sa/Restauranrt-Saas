@@ -45,6 +45,35 @@ Technologies
 - Swagger / OpenAPI
 - Git & GitHub
 
+Run with Docker
+
+Everything you need to run the API and SQL Server locally:
+
+```bash
+docker compose up --build
+```
+
+- API: http://localhost:8080 (Swagger UI at http://localhost:8080/swagger)
+- SQL Server: localhost:1433 (user `sa`, password from `MSSQL_SA_PASSWORD`, default `YourStrong!Passw0rd`)
+
+The container creates the database schema on first start (`Database:AutoCreate=true`).
+To use your own SQL Server instance instead, change `ConnectionStrings__DefaultConnection` in
+`docker-compose.yml` and set `Database__AutoCreate` to `false`.
+
+Override secrets without editing the file:
+
+```bash
+MSSQL_SA_PASSWORD='MyStr0ng!Pass' JWT_KEY='a-real-32-char-secret-key' docker compose up --build
+```
+
+Tests
+
+```bash
+dotnet test
+```
+
+28 xUnit tests cover order rules, payments, password hashing, refresh tokens, and tenant isolation.
+
 Project Status
 
 The project is currently under active development. The backend is being developed first, with the frontend planned as the next stage.
