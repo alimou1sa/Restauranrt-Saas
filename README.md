@@ -107,10 +107,10 @@ RestaurantSaaS/
 ├── RestaurantSaaS.Domain/          entities and shared abstractions
 ├── RestaurantSaaS.Application/     services, DTOs, interfaces, business rules
 ├── RestaurantSaaS.Infrastructure/  EF Core, AppDbContext, auth, hashers
-├── RestaurantSaas_Api/             controllers, Program.cs, Swagger, appsettings
+├── RestaurantSaas_Api/             controllers, Program.cs, Swagger, Dockerfile
 ├── RestaurantSaaS.Tests/           28 xUnit tests
-├── Dockerfile                      multi-stage build
-└── docker-compose.yml              API + SQL Server 2022
+├── docker-compose.yml              API + SQL Server 2022
+└── docker-compose.override.yml     development settings (ports, env)
 ```
 
 ## Run with Docker
@@ -128,6 +128,9 @@ docker compose up --build
 
 The container creates the schema on first start (`Database:AutoCreate=true`). Data is kept in a
 named volume, so it survives `docker compose down`.
+
+In Visual Studio, set **docker-compose** as the startup project and press F5 - it uses the same
+compose files, so the API still reaches SQL Server on the `sqlserver` service name.
 
 Override the defaults without editing files:
 

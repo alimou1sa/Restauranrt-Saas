@@ -1,7 +1,21 @@
 services:
+  restaurantsaas_api:
+    image: ${DOCKER_REGISTRY-}restaurantsaasapi
+    build:
+      context: .
+      dockerfile: RestaurantSaas_Api/Dockerfile
+    environment:
+      # The API talks to the SQL Server container, not to localhost.
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=RestaurantSaaS;User Id=sa;Password=${MSSQL_SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;"
+      Jwt__Key: "${JWT_KEY:-local-dev-only-secret-key-change-me-32chars-minimum}"
+      # The project has no EF migrations yet, so the schema is created on first start.
+      Database__AutoCreate: "true"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: restaurantsaas-sql
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-YourStrong!Passw0rd}"
@@ -17,24 +31,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: restaurantsaas-api
-    ports:
-      - "8080:8080"
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Development"
-      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=RestaurantSaaS;User Id=sa;Password=${MSSQL_SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;"
-      # Override with a real secret outside local development.
-      Jwt__Key: "${JWT_KEY:-local-dev-only-secret-key-change-me-32chars-minimum}"
-      # Creates the database schema on first start (no EF migrations in this project yet).
-      Database__AutoCreate: "true"
-    depends_on:
-      sqlserver:
-        condition: service_healthy
 
 volumes:
   sqlserver-data:

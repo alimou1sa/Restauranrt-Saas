@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+  <Project Path="RestaurantSaaS.Application/RestaurantSaaS.Application.csproj" />
+  <Project Path="RestaurantSaaS.Domain/RestaurantSaaS.Domain.csproj" />
+  <Project Path="RestaurantSaaS.Infrastructure/RestaurantSaaS.Infrastructure.csproj" />
+  <Project Path="RestaurantSaaS.Tests/RestaurantSaaS.Tests.csproj" />
+  <Project Path="RestaurantSaaS_Api/RestaurantSaaS_Api.csproj" />
+</Solution>
